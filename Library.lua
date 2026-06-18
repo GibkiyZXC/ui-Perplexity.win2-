@@ -1442,23 +1442,45 @@ UserInputService.InputBegan:Connect(function(input, processed)
 end)
 
 -- Экспорт библиотеки
-AuroraExposed = {
-    ScreenGui = ScreenGui,
-    THEME = THEME,
-    SaveConfig = SaveConfig,
-    LoadConfig = LoadConfig,
-    UpdateBackgroundTheme = UpdateBackgroundTheme,
-    SetToggleKey = SetToggleKey,
-    SetSnowEnabled = SetSnowEnabled,
-    SetBlurEnabled = SetBlurEnabled,
-    optSnowEnabled = true,
-    optBlurEnabled = true,
-    new = function()
-        local inst = Aurora.new()
-        AuroraExposed.Instance = inst
-        return inst
+-- =============================================================================
+-- [[ СИСТЕМА СМЕНЫ ТЕМЫ (ОБНОВЛЕНИЕ ЦВЕТОВ) ]]
+-- =============================================================================
+local function UpdateBackgroundTheme(accentOrTable, particleColors)
+    if typeof(accentOrTable) == "Color3" then
+        THEME.Accent = accentOrTable
+    elseif typeof(accentOrTable) == "table" then
+        for k, v in pairs(accentOrTable) do
+            if THEME[k] ~= nil and typeof(v) == "Color3" then
+                THEME[k] = v
+            end
+        end
     end
-}
+    
+    if particleColors and typeof(particleColors) == "table" then
+        activeParticleColors = particleColors
+    end
 
-getgenv().Aurora = AuroraExposed
+    for _, item in ipairs(themeObjects) do
+        pcall(function()
+            if item.Obj and item.Prop and THEME[item.Key] then
+                -- Безопасное заполнение параметров без использования скобок {[...]} на лету
+                local tweenProperties = {}
+                tweenProperties[item.Prop] = THEME[item.Key]
+                Tween(item.Obj, 0.3, tweenProperties)
+            end
+        end)
+    end
+
+    for _, p in ipairs(allParticles) do
+        pcall(function()
+            if p.Obj then
+                local randomColor = activeParticleColors[math.random(1, #activeParticleColors)]
+                Tween(p.Obj, 0.5, {ImageColor3 = randomColor})
+            end
+        end)
+    end
+end
+
+-- Делаем функцию доступной извне
+AuroraExposed.UpdateBackgroundTheme = UpdateBackgroundTheme
 return AuroraExposed
