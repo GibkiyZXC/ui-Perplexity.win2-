@@ -1,6 +1,6 @@
 -- =============================================================================
--- [[ AURORA LEGACY - OPEN-SOURCE HIGH-FIDELITY UI FRAMEWORK ]]
--- [[ GitHub Ready | Made for Premium Execution Environments ]]
+-- [[ PERPLEXITY.WIN - PREMIUM OPEN-SOURCE CHEAT UI FRAMEWORK ]]
+-- [[ GitHub Ready | Modular Roblox Hack UI & ESP Preview System ]]
 -- =============================================================================
 
 if getgenv().Aurora then
@@ -10,6 +10,7 @@ if getgenv().Aurora then
 end
 
 local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
 
 -- Безопасное циклическое ожидание полной загрузки локального игрока во избежание нил-ошибок
 local LocalPlayer = Players.LocalPlayer
@@ -33,7 +34,7 @@ end
 
 -- Создание ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AuroraLegacy_UI"
+ScreenGui.Name = "Perplexity_UI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -68,14 +69,17 @@ end
 
 local optBlurEnabled = true
 local optSnowEnabled = true
+local optEspPreviewEnabled = false -- Отключено
 
--- Глобальные списки динамической регистрации для авто-смены темы
+-- Глобальные списки динамической регистрации для авто-смены темы (ИНИЦИАЛИЗИРОВАНЫ СТРОГО ВВЕРХУ)
 local allParticles = {}
 local allCheckboxes = {}
 local allSliders = {}
 local allKeybinds = {}
 local allTabs = {}
 local allSubTabs = {}
+local themeObjects = {}
+local themeCallbacks = {}
 
 local activeParticleColors = {
     Color3.fromRGB(255, 30, 60),  -- Яркий неоново-красный
@@ -86,6 +90,9 @@ local activeParticleColors = {
 -- База данных для сериализации конфигураций (Configs)
 local Flags = {}
 local SaveFlags = {}
+
+-- Переменная для кастомного курсора (если будет добавлен позже)
+local Cursor = nil
 
 -- =============================================================================
 -- [[ ЗАГРУЗЧИК ШРИФТА (FIGTREE-SEMIBOLD ИЗ NEXONIX) ]]
@@ -127,6 +134,16 @@ local function ApplyFont(label, size)
     label.TextSize = size or 14
 end
 
+-- Система динамической привязки тем оформления (Theme Binding)
+local function RegisterThemeObject(object, property, themeKey)
+    table.insert(themeObjects, {
+        Obj = object,
+        Prop = property,
+        Key = themeKey
+    })
+    object[property] = THEME[themeKey]
+end
+
 -- Вспомогательная функция для простой анимации
 local function Tween(object, time, properties, style, direction)
     style = style or Enum.EasingStyle.Quad
@@ -154,7 +171,7 @@ local function AddStroke(parent, color, thickness)
     return stroke
 end
 
--- Мягкий контур для текста
+-- Мягкий контур для текста ( Drop-shadow эффект из scoot )
 local function AddTextStroke(parent)
     local s = Instance.new("UIStroke")
     s.Color = Color3.fromRGB(0, 0, 0)
@@ -309,6 +326,13 @@ local function SetupMenuBackgroundParticles(parent)
     particleContainer.ClipsDescendants = true
     particleContainer.ZIndex = 1 -- Задний фон под контентом
     particleContainer.Parent = parent
+    
+    local colors = {
+        Color3.fromRGB(0, 240, 255),   -- Насыщенный бирюзовый неон
+        Color3.fromRGB(255, 60, 105),  -- Яркий розовый неон
+        Color3.fromRGB(180, 50, 255),  -- Фиолетовый неон
+        Color3.fromRGB(0, 120, 255)    -- Глубокий синий неон
+    }
     
     local particles = {}
     for i = 1, 22 do
@@ -550,6 +574,11 @@ UserInputService.InputBegan:Connect(function(input)
     end
 end)
 
+-- Симулированные динамические ESP-элементы (Пустые заглушки во избежание нил-ошибок)
+local Window = nil
+local function updateEspPreviewOverlay() end
+local function updateEspPreviewVisibility() end
+
 -- =============================================================================
 -- [[ СТРУКТУРА ОКНА (CORE FRAMEWORK) ]]
 -- =============================================================================
@@ -567,6 +596,15 @@ function Aurora.new()
     self.MainFrame.BackgroundTransparency = 1 -- Фоном управляет BgFrame
     self.MainFrame.ClipsDescendants = true
     self.MainFrame.Parent = ScreenGui
+    
+    -- ПРИНУДИТЕЛЬНАЯ РАЗБЛОКИРОВКА МЫШИ (Позволяет нажимать кнопки при ходьбе)
+    local ModalHelper = Instance.new("TextButton")
+    ModalHelper.Size = UDim2.new(0, 0, 0, 0)
+    ModalHelper.BackgroundTransparency = 1
+    ModalHelper.Text = ""
+    ModalHelper.Active = false
+    ModalHelper.Modal = true -- Этот флаг отключает блокировку курсора при движении в Roblox
+    ModalHelper.Parent = self.MainFrame
     
     local BgFrame = Instance.new("Frame")
     BgFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -601,14 +639,13 @@ function Aurora.new()
     TitleText.Size = UDim2.new(1, -20, 1, 0)
     TitleText.Position = UDim2.new(0, 15, 0, 0)
     TitleText.BackgroundTransparency = 1
-    TitleText.Text = "AURORA <font color='rgb(255,255,255)'>LEGACY</font>"
+    TitleText.Text = "PERPLEXITY<font color='rgb(255,255,255)'>.WIN</font>" -- Чит переименован
     TitleText.RichText = true
     TitleText.TextColor3 = THEME.Accent
-    TitleText.Font = Enum.Font.GothamBold
-    TitleText.TextSize = 15
     TitleText.ZIndex = 3
     TitleText.TextXAlignment = Enum.TextXAlignment.Left
     AddTextStroke(TitleText)
+    RegisterThemeObject(TitleText, "TextColor3", "Accent")
     ApplyFont(TitleText, 15)
     TitleText.Parent = LogoContainer
     
@@ -730,6 +767,7 @@ function Aurora:CreateTab(name)
     indicator.BackgroundTransparency = 1
     indicator.Visible = false -- Скрыт изначально
     indicator.Parent = tab.Button
+    RegisterThemeObject(indicator, "BackgroundColor3", "Accent")
     
     -- Контейнер контента
     tab.Frame = Instance.new("Frame")
@@ -777,6 +815,13 @@ function Aurora:CreateTab(name)
         end
     end
     
+    -- Колбек перекраски активной вкладки
+    table.insert(themeCallbacks, function()
+        if self.ActiveTab == tab then
+            tab.Button.TextColor3 = THEME.Accent
+        end
+    end)
+    
     tab.Button.MouseEnter:Connect(function()
         if self.ActiveTab ~= tab then
             Tween(tab.Button, 0.1, {TextColor3 = THEME.Text})
@@ -791,7 +836,8 @@ function Aurora:CreateTab(name)
         end
     end)
     
-    tab.Button.MouseButton1Click:Connect(function()
+    -- ИСПРАВЛЕНО: Смена на MouseButton1Down для моментального отклика при ходьбе
+    tab.Button.MouseButton1Down:Connect(function()
         if self.ActiveTab == tab then return end
         
         local prevTab = self.ActiveTab
@@ -860,6 +906,7 @@ function Aurora:CreateTab(name)
         section.TitleLabel.ZIndex = 2
         AddTextStroke(section.TitleLabel)
         ApplyFont(section.TitleLabel, 10)
+        RegisterThemeObject(section.TitleLabel, "TextColor3", "Accent")
         section.TitleLabel.Parent = section.Frame
         
         -- Полноценная архитектура внутренних вкладок (Sub-Tabs) как на скриншоте
@@ -907,6 +954,7 @@ function Aurora:CreateTab(name)
             subTab.Underline.Visible = false
             subTab.Underline.ZIndex = 3
             subTab.Underline.Parent = subTab.Button
+            RegisterThemeObject(subTab.Underline, "BackgroundColor3", "Accent")
             
             -- Контейнер содержимого для этой вкладки
             subTab.Container = Instance.new("Frame")
@@ -921,7 +969,8 @@ function Aurora:CreateTab(name)
             containerLayout.Padding = UDim.new(0, 10)
             containerLayout.Parent = subTab.Container
             
-            subTab.Button.MouseButton1Click:Connect(function()
+            -- ИСПРАВЛЕНО: Смена на MouseButton1Down для моментального отклика
+            subTab.Button.MouseButton1Down:Connect(function()
                 if section.ActiveSubTab == subTab then return end
                 
                 if section.ActiveSubTab then
@@ -970,6 +1019,7 @@ function Aurora:CreateTab(name)
             end
             
             table.insert(section.SubTabs, subTab)
+            table.insert(allSubTabs, subTab)
             return subTab
         end
         
@@ -1002,7 +1052,8 @@ function Aurora:CreateTab(name)
                 Tween(btnStroke, 0.1, {Color = THEME.Border})
             end)
             
-            btn.MouseButton1Click:Connect(function()
+            -- ИСПРАВЛЕНО: Смена на MouseButton1Down
+            btn.MouseButton1Down:Connect(function()
                 Tween(btn, 0.05, {BackgroundColor3 = THEME.Accent})
                 task.delay(0.05, function()
                     Tween(btn, 0.1, {BackgroundColor3 = Color3.fromRGB(28, 28, 36)})
@@ -1101,6 +1152,10 @@ function Aurora:CreateTab(name)
                     Tween(label, 0.15, {TextColor3 = THEME.TextMuted})
                 end
                 
+                -- Автоматическое скрытие/отображение парящего виджета ESP Preview
+                updateEspPreviewVisibility()
+                updateEspPreviewOverlay()
+                
                 -- Сохранение флага в памяти при изменении
                 SaveFlags[name] = checkbox.State
                 
@@ -1116,7 +1171,8 @@ function Aurora:CreateTab(name)
                 Tween(indStroke, 0.1, {Color = THEME.Border})
             end)
             
-            clickContainer.MouseButton1Click:Connect(function()
+            -- ИСПРАВЛЕНО: Смена на MouseButton1Down
+            clickContainer.MouseButton1Down:Connect(function()
                 checkbox.State = not checkbox.State
                 update()
             end)
@@ -1138,6 +1194,7 @@ function Aurora:CreateTab(name)
                 AddCorner(bindBtn, 2)
                 local kbStroke = AddStroke(bindBtn, THEME.Border, 1)
                 bindBtn.Parent = subElements
+                RegisterThemeObject(bindBtn, "TextColor3", "Accent")
                 
                 local function setKey(keyName)
                     kb.Key = tostring(keyName)
@@ -1145,7 +1202,8 @@ function Aurora:CreateTab(name)
                     SaveFlags[name .. "_key"] = kb.Key
                 end
                 
-                bindBtn.MouseButton1Click:Connect(function()
+                -- ИСПРАВЛЕНО: Смена на MouseButton1Down
+                bindBtn.MouseButton1Down:Connect(function()
                     if kb.Binding then return end
                     kb.Binding = true
                     bindBtn.Text = "..."
@@ -1179,10 +1237,11 @@ function Aurora:CreateTab(name)
                 }
                 
                 SaveFlags[name .. "_key"] = kb.Key
+                table.insert(allKeybinds, {Button = bindBtn})
                 return kb
             end
             
-            -- Встроенная палитра цветов (Полностью защищена от фантомных кликов чекбокса)
+            -- Встроенная палитра цветов (СВЯЗАНО С КЛИКАБЕЛЬНЫМ ОКНОМ COLORPICKER)
             function checkbox:CreateColorpicker(default, cb)
                 local cp = {Value = default or Color3.fromRGB(255, 255, 255)}
                 
@@ -1202,10 +1261,42 @@ function Aurora:CreateTab(name)
                     SaveFlags[name .. "_color"] = colorValue:ToHex()
                 end
                 
-                cpBtn.MouseButton1Click:Connect(function()
-                    local randColor = Color3.fromHSV(math.random(), 0.8, 0.9)
-                    setColor(randColor)
-                    task.spawn(function() pcall(cb, randColor) end)
+                -- ИСПРАВЛЕНО: Смена на MouseButton1Down
+                cpBtn.MouseButton1Down:Connect(function()
+                    -- Флаг предотвращения моментального закрытия в этом кадре
+                    openedThisFrame = true
+                    task.spawn(function()
+                        task.wait()
+                        openedThisFrame = false
+                    end)
+                    
+                    local h, s, v = cp.Value:ToHSV()
+                    
+                    activeColorpicker = {
+                        H = h,
+                        S = s,
+                        V = v,
+                        Button = cpBtn,
+                        Callback = function(colorValue)
+                            setColor(colorValue)
+                            task.spawn(function() pcall(cb, colorValue) end)
+                        end
+                    }
+                    
+                    -- Смещение с учетом Topbar
+                    local guiInset = GuiService:GetGuiInset()
+                    ColorpickerWindow.Position = UDim2.new(
+                        0, cpBtn.AbsolutePosition.X - ColorpickerWindow.Size.X.Offset - 10,
+                        0, cpBtn.AbsolutePosition.Y - guiInset.Y
+                    )
+                    
+                    -- Синхронизируем положение ползунков палитры под цвет кнопки
+                    svGrid.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                    svKnob.Position = UDim2.new(s, 0, 1 - v, 0)
+                    hueKnob.Position = UDim2.new(0.5, 0, h, 0)
+                    hexLabel.Text = "HEX: #" .. cp.Value:ToHex():upper()
+                    
+                    ColorpickerWindow.Visible = true
                 end)
                 
                 Flags[name .. "_color"] = {
@@ -1231,7 +1322,16 @@ function Aurora:CreateTab(name)
                 end
             }
             
+            -- Автоматическая перекраска чекбокса при смене темы на лету (ИСПРАВЛЕНО: Заменен вызов nil-функции на table.insert)
+            table.insert(themeCallbacks, function()
+                if checkbox.State then
+                    indicator.BackgroundColor3 = THEME.Accent
+                    label.TextColor3 = THEME.Text
+                end
+            end)
+            
             SaveFlags[name] = checkbox.State
+            table.insert(allCheckboxes, {Indicator = indicator, State = checkbox})
             table.insert(section.Elements, {Name = name, Frame = boxFrame})
             return checkbox
         end
@@ -1272,6 +1372,7 @@ function Aurora:CreateTab(name)
             valueDisplay.ZIndex = 2
             AddTextStroke(valueDisplay)
             ApplyFont(valueDisplay, 10)
+            RegisterThemeObject(valueDisplay, "TextColor3", "Accent")
             valueDisplay.Parent = sliderFrame
             
             local barBg = Instance.new("Frame")
@@ -1289,6 +1390,7 @@ function Aurora:CreateTab(name)
             barFill.ZIndex = 2
             AddCorner(barFill, 2)
             barFill.Parent = barBg
+            RegisterThemeObject(barFill, "BackgroundColor3", "Accent")
             
             -- Идеальный круглый бегунок
             local knob = Instance.new("Frame")
@@ -1347,6 +1449,7 @@ function Aurora:CreateTab(name)
             }
             
             SaveFlags[name] = slider.Value
+            table.insert(allSliders, {BarFill = barFill, ValueDisplay = valueDisplay})
             table.insert(section.Elements, {Name = name, Frame = sliderFrame})
             return slider
         end
@@ -1402,6 +1505,7 @@ function Aurora:CreateTab(name)
             arrow.TextSize = 12
             arrow.ZIndex = 2
             arrow.Parent = btn
+            RegisterThemeObject(arrow, "TextColor3", "Accent")
             
             local container = Instance.new("Frame")
             container.Size = UDim2.new(1, 0, 0, 0)
@@ -1449,7 +1553,8 @@ function Aurora:CreateTab(name)
                     Tween(itemBtn, 0.1, {TextColor3 = THEME.TextMuted})
                 end)
                 
-                itemBtn.MouseButton1Click:Connect(function()
+                -- ИСПРАВЛЕНО: Смена на MouseButton1Down
+                itemBtn.MouseButton1Down:Connect(function()
                     selectValue(item)
                     dropdown.Open = false
                     Tween(container, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
@@ -1458,7 +1563,8 @@ function Aurora:CreateTab(name)
                 end)
             end
             
-            btn.MouseButton1Click:Connect(function()
+            -- ИСПРАВЛЕНО: Смена на MouseButton1Down
+            btn.MouseButton1Down:Connect(function()
                 dropdown.Open = not dropdown.Open
                 if dropdown.Open then
                     container.Visible = true
@@ -1534,19 +1640,15 @@ function Aurora:CreateTab(name)
             AddCorner(bindBtn, 3)
             local bindStroke = AddStroke(bindBtn, THEME.Border, 1)
             bindBtn.Parent = kbFrame
-            
-            local function setKey(keyName)
-                keybind.Key = tostring(keyName)
-                bindBtn.Text = keybind.Key
-                SaveFlags[name] = keybind.Key
-            end
+            RegisterThemeObject(bindBtn, "TextColor3", "Accent")
             
             bindBtn.MouseEnter:Connect(function() Tween(bindStroke, 0.1, {Color = THEME.Accent}) end)
             bindBtn.MouseLeave:Connect(function() 
                 if not keybind.Binding then Tween(bindStroke, 0.1, {Color = THEME.Border}) end 
             end)
             
-            bindBtn.MouseButton1Click:Connect(function()
+            -- ИСПРАВЛЕНО: Смена на MouseButton1Down
+            bindBtn.MouseButton1Down:Connect(function()
                 if keybind.Binding then return end
                 keybind.Binding = true
                 bindBtn.Text = "..."
@@ -1580,96 +1682,12 @@ function Aurora:CreateTab(name)
             }
             
             SaveFlags[name] = keybind.Key
+            table.insert(allKeybinds, {Button = bindBtn})
             table.insert(section.Elements, {Name = name, Frame = kbFrame})
             return keybind
         end
         function section:CreateKeybind(name, default, callback)
             return section:CreateKeybindInternal(name, default, callback, section.Frame)
-        end
-        
-        -- Полноценный 3D ESP Preview на ViewportFrame (как в nhack/Neverlose)
-        function section:CreateESPPreview()
-            local previewFrame = Instance.new("Frame")
-            previewFrame.Size = UDim2.new(1, 0, 0, 200) -- Просторная 200px высота для 3D персонажа
-            previewFrame.BackgroundColor3 = THEME.SidebarBg
-            previewFrame.BackgroundTransparency = 0.12
-            previewFrame.ZIndex = 2
-            AddCorner(previewFrame, 6)
-            AddDoubleStroke(previewFrame)
-            previewFrame.Parent = section.Frame
-            
-            local viewport = Instance.new("ViewportFrame")
-            viewport.Size = UDim2.new(1, -10, 1, -10)
-            viewport.Position = UDim2.new(0, 5, 0, 5)
-            viewport.BackgroundTransparency = 1
-            viewport.ZIndex = 3
-            viewport.Parent = previewFrame
-            
-            -- Камера для ViewportFrame
-            local camera = Instance.new("Camera")
-            camera.FieldOfView = 35
-            camera.Parent = viewport
-            viewport.CurrentCamera = camera
-            camera.CFrame = CFrame.new(Vector3.new(0, 0.3, -6.5), Vector3.new(0, -0.3, 0))
-            
-            -- Инициализация и автоповорот 3D Bacon-Hair Noob модели
-            task.spawn(function()
-                local successModel, model = pcall(function()
-                    return Players:CreateHumanoidModelFromUserId(1) -- Официальный Roblox Noob ID
-                end)
-                
-                if successModel and model then
-                    for _, part in ipairs(model:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.Anchored = true
-                            part.CanCollide = false
-                        end
-                    end
-                    
-                    model:PivotTo(CFrame.new(0, -0.5, 0))
-                    model.Parent = viewport
-                    
-                    local rotAngle = 0
-                    RunService.RenderStepped:Connect(function(dt)
-                        if menuVisible and previewFrame.Visible then
-                            rotAngle = rotAngle + dt * 45
-                            model:PivotTo(CFrame.new(0, -0.4, 0) * CFrame.Angles(0, math.rad(rotAngle), 0))
-                        end
-                    end)
-                end
-            end)
-            
-            -- Симулированные ESP-элементы поверх 3D персонажа
-            local espBox = Instance.new("Frame")
-            espBox.Size = UDim2.new(0, 80, 0, 140)
-            espBox.Position = UDim2.new(0.5, -40, 0.5, -70)
-            espBox.BackgroundTransparency = 1
-            espBox.ZIndex = 4
-            AddStroke(espBox, THEME.Accent, 1) -- Розовый неон ESP Box
-            espBox.Parent = previewFrame
-            
-            local espHealth = Instance.new("Frame")
-            espHealth.Size = UDim2.new(0, 2, 0, 140)
-            espHealth.Position = UDim2.new(0.5, -45, 0.5, -70)
-            espHealth.BackgroundColor3 = Color3.fromRGB(0, 255, 100) -- Здоровье
-            espHealth.BorderSizePixel = 0
-            espHealth.ZIndex = 4
-            espHealth.Parent = previewFrame
-            
-            local espName = Instance.new("TextLabel")
-            espName.Size = UDim2.new(0, 100, 0, 12)
-            espName.Position = UDim2.new(0.5, 0, 0.5, -82)
-            espName.AnchorPoint = Vector2.new(0.5, 0.5)
-            espName.BackgroundTransparency = 1
-            espName.Text = "BAC_HAIR"
-            espName.TextColor3 = Color3.fromRGB(255, 255, 255)
-            espName.ZIndex = 4
-            ApplyFont(espName, 9)
-            AddTextStroke(espName)
-            espName.Parent = previewFrame
-            
-            table.insert(section.Elements, {Name = "ESP Preview Window", Frame = previewFrame})
-            return previewFrame
         end
         
         table.insert(tab.Sections, section)
@@ -1686,41 +1704,31 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
     THEME.Accent = accentColor
     activeParticleColors = particleColors
     
-    -- Обновляем кастомный курсор
-    Cursor.ImageColor3 = accentColor
+    -- Обновляем кастомный курсор (добавлена защита от nil)
+    if Cursor then
+        Cursor.ImageColor3 = accentColor
+    end
     
     -- Перекрашиваем все запущенные парящие неоновые сферы
     for _, p in ipairs(allParticles) do
         p.Obj.ImageColor3 = particleColors[math.random(1, #particleColors)]
     end
     
-    -- Обновление элементов палитры
-    svGrid.Parent.UIStroke.Color = accentColor
-    
-    -- Обновляем чекбоксы в реальном времени
-    for _, cb in ipairs(allCheckboxes) do
-        if cb.State then
-            cb.Indicator.BackgroundColor3 = THEME.Accent
-        end
+    -- Обновляем все зарегистрированные статические объекты
+    for _, item in ipairs(themeObjects) do
+        pcall(function()
+            item.Obj[item.Prop] = THEME[item.Key]
+        end)
     end
     
-    -- Обновляем слайдеры в реальном времени
-    for _, sl in ipairs(allSliders) do
-        sl.BarFill.BackgroundColor3 = THEME.Accent
-        sl.ValueDisplay.TextColor3 = THEME.Accent
+    -- Срабатывание колбэков переоценки состояния элементов
+    for _, cb in ipairs(themeCallbacks) do
+        pcall(cb)
     end
     
-    -- Обновляем клавиши биндов
-    for _, kb in ipairs(allKeybinds) do
-        kb.Button.TextColor3 = THEME.Accent
-    end
-    
-    -- Обновляем активный текст и линии вкладок сайдбара
-    for _, t in ipairs(allTabs) do
-        t.Indicator.BackgroundColor3 = THEME.Accent
-        if Window.ActiveTab == t then
-            t.Button.TextColor3 = THEME.Accent
-        end
+    -- Перекраска индикаторов внутренних вкладок (Sub-Tabs)
+    for _, st in ipairs(allSubTabs) do
+        st.Underline.BackgroundColor3 = THEME.Accent
     end
 end
 
@@ -1760,10 +1768,10 @@ local function LoadConfig(slotName)
 end
 
 -- =============================================================================
--- [[ СОЗДАНИЕ ВЕНЮ (ИНТЕГРАЦИЯ С ОРИГИНАЛЬНЫМИ НАСТРОЙКАМИ) ]]
+-- [[ СОЗДАНИЕ МЕНЮ (ИНТЕГРАЦИЯ С ОРИГИНАЛЬНЫМИ НАСТРОЙКАМИ) ]]
 -- =============================================================================
 
-local Window = Aurora.new()
+Window = Aurora.new()
 
 -- Вкладка "Visuals" (Полностью воссоздана по скриншоту input_file_8.png)
 local VisualsTab = Window:CreateTab("Visuals")
@@ -1849,10 +1857,6 @@ WorldSubTab:CreateSlider("Fog Start", 0, 1000, 500, function() end)
 WorldSubTab:CreateSlider("Fog End", 0, 2000, 1000, function() end)
 WorldSubTab:CreateCheckbox("Change Skybox", false, function() end)
 WorldSubTab:CreateDropdown("Skybox", {"Above Clouds", "Purple Nebula", "Default"}, "Above Clouds", function() end)
-
--- Раздел вывода интерактивного 3D ESP Preview (Колонка 2 внизу)
-local EspPreviewSec = VisualsTab:CreateSection("ESP Preview", 2)
-EspPreviewSec:CreateESPPreview()
 
 -- 5. Раздел: Screen (Колонка 3)
 local ScreenSec = VisualsTab:CreateSection("Screen", 3)
