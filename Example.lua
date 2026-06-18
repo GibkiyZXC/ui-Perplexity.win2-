@@ -3,17 +3,35 @@
 -- [[ Example.lua ]]
 -- =============================================================================
 
--- В боевой среде раскомментируйте строку загрузки через HttpGet:
--- local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/sametexe001/sametlibs/refs/heads/main/nhack/Library.lua"))()
+-- Безопасный загрузчик библиотеки
+local Library = getgenv().Perplexity
 
--- Для тестов используем глобальную переменную или локальный импорт:
-local Library = getgenv().Perplexity or require(script.Parent.Library)
+if not Library then
+    -- Проверка 1: Безопасный поиск локального файла в Roblox Studio
+    local success, res = pcall(function()
+        return require(script.Parent.Library)
+    end)
+    if success then
+        Library = res
+    -- Проверка 2: Поиск локального файла на диске вашего чита (папка workspace)
+    elseif typeof(readfile) == "function" and isfile and isfile("Library.lua") then
+        local fileSuccess, fileData = pcall(readfile, "Library.lua")
+        if fileSuccess then
+            Library = loadstring(fileData)()
+        end
+    end
+end
+
+-- Если библиотека не найдена, сообщаем пользователю вместо вызова ошибки Parent
+if not Library then
+    error("[Perplexity.Win Error]: Сначала запустите файл Library.lua, либо сохраните его в папку workspace!")
+end
 
 _G.Library = Library
 getgenv().Library = Library
 
 -- =============================================================================
--- [[ ИНИЦИАЛИЗАЦИЯ ВИДЖЕТОВ (РАЗДЕЛЕНЫ И СТИЛИЗОВАНЫ) ]]
+-- [[ ИНИЦИАЛИЗАЦИЯ ВИДЖЕТОВ ]]
 -- =============================================================================
 
 local Watermark = Library:Watermark({ Name = "Landryhaxx" })
@@ -69,7 +87,7 @@ Library:RegisterSettingsWidget({ Name = "Spotify", Default = false, Callback = f
 Library:RegisterSettingsWidget({ Name = "Player List", Default = false, Callback = function(Value) Playerlist:SetVisibility(Value) end })
 
 -- =============================================================================
--- [[ СТРУКТУРА СТРАНИЦ ФРЕЙМВОРКА ]]
+-- [[ СТРУКТУРА СТРАНИЦ ]]
 -- =============================================================================
 
 local Page = Window:Page({ Name = "Main" })
@@ -78,7 +96,6 @@ local SubPage = Page:SubPage({ Name = "Combat" })
 local LeftSection = SubPage:Section({ Name = "Aimbot", Side = 1 })
 local RightSection = SubPage:Section({ Name = "Visuals", Side = 2 })
 
--- Создание контроллеров внутри секций
 LeftSection:Toggle({
     Name = "Enable Aimbot",
     Flag = "AimbotEnabled",
@@ -110,5 +127,4 @@ RightSection:Toggle({
     end
 })
 
--- Стартовое уведомление и применение настроек
 Library:Notification("Landryhaxx Loaded", 3, Library.Theme["Accent"])
