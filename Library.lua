@@ -1441,7 +1441,6 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
--- Экспорт библиотеки
 -- =============================================================================
 -- [[ СИСТЕМА СМЕНЫ ТЕМЫ (ОБНОВЛЕНИЕ ЦВЕТОВ) ]]
 -- =============================================================================
@@ -1463,7 +1462,7 @@ local function UpdateBackgroundTheme(accentOrTable, particleColors)
     for _, item in ipairs(themeObjects) do
         pcall(function()
             if item.Obj and item.Prop and THEME[item.Key] then
-                -- Безопасное заполнение параметров без использования скобок {[...]} на лету
+                -- Безопасный способ создания таблицы без использования скобок {[...]} на лету
                 local tweenProperties = {}
                 tweenProperties[item.Prop] = THEME[item.Key]
                 Tween(item.Obj, 0.3, tweenProperties)
@@ -1481,6 +1480,5 @@ local function UpdateBackgroundTheme(accentOrTable, particleColors)
     end
 end
 
--- Делаем функцию доступной извне
 AuroraExposed.UpdateBackgroundTheme = UpdateBackgroundTheme
 return AuroraExposed
