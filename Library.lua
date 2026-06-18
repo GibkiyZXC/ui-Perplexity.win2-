@@ -1,6 +1,6 @@
 -- =============================================================================
 -- [[ PERPLEXITY.WIN - HIGH-FIDELITY UI FRAMEWORK & COMPATIBILITY LAYER ]]
--- [[ GitHub Ready | Library.lua ]]
+-- [[ Library.lua ]]
 -- =============================================================================
 
 local Library = {}
@@ -50,7 +50,7 @@ local THEME = {
 
 Library.Theme = THEME
 
--- Размытие
+-- Размытие заднего плана
 local MenuBlur = Lighting:FindFirstChild("Perplexity_Blur")
 if not MenuBlur then
     MenuBlur = Instance.new("BlurEffect")
@@ -449,7 +449,7 @@ end
 
 function Library:Watermark(options)
     local widget = CreateBaseWidget(options.Name or "Watermark", UDim2.new(0, 240, 0, 32))
-    widget.TitleLabel:Destroy() -- Водяному знаку не нужен заголовок
+    widget.TitleLabel:Destroy()
     widget.Frame.Size = UDim2.new(0, 240, 0, 26)
     widget.Frame.Position = UDim2.new(0.8, 0, 0.05, 0)
     
@@ -548,7 +548,6 @@ function Library:ESPPreview(options)
     viewport.CurrentCamera = camera
     camera.CFrame = CFrame.new(Vector3.new(0, 0.3, -6.5), Vector3.new(0, -0.3, 0))
     
-    -- Спавн 3D Noob модели
     task.spawn(function()
         local successModel, model = pcall(function()
             return Players:CreateHumanoidModelFromUserId(1)
@@ -570,14 +569,13 @@ function Library:ESPPreview(options)
         end
     end)
     
-    -- Симуляция ESP-рамки поверх
     local espBox = Instance.new("Frame")
     espBox.Size = UDim2.new(0, 80, 0, 140)
     espBox.Position = UDim2.new(0.5, -40, 0.5, -70)
     espBox.BackgroundTransparency = 1
-    AddStroke(espBox, THEME.Accent, 1)
+    local stroke = AddStroke(espBox, THEME.Accent, 1)
     espBox.Parent = viewport
-    table.insert(allKeybinds, espBox:FindFirstChildOfClass("UIStroke")) -- Добавляем в список автообновлений
+    table.insert(allKeybinds, stroke)
     
     local espHealth = Instance.new("Frame")
     espHealth.Size = UDim2.new(0, 2, 0, 140)
@@ -638,9 +636,9 @@ function Library:RadarWidget(options)
     radarCircle.Size = UDim2.new(1, 0, 1, 0)
     radarCircle.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     AddCorner(radarCircle, 70)
-    AddStroke(radarCircle, THEME.Accent, 1)
+    local stroke = AddStroke(radarCircle, THEME.Accent, 1)
     radarCircle.Parent = widget.Container
-    table.insert(allKeybinds, radarCircle:FindFirstChildOfClass("UIStroke"))
+    table.insert(allKeybinds, stroke)
     
     local centerPoint = Instance.new("Frame")
     centerPoint.Size = UDim2.new(0, 4, 0, 4)
@@ -785,7 +783,7 @@ function Library:Playerlist(options)
 end
 
 -- =============================================================================
--- [[ КОНСТРУКТОР ГЛАВНОГО ОКНА И СОВМЕСТИМОСТЬ ]]
+-- [[ КОНСТРУКТОР ГЛАВНОГО ОКНА ]]
 -- =============================================================================
 
 function Library:Window(options)
@@ -794,7 +792,6 @@ function Library:Window(options)
 end
 
 function Library:RegisterSettingsWidget(options)
-    -- Автоматическое добавление чекбокса в "Widget Toggles" на странице настроек
     if WindowInstance and WindowInstance.WidgetTogglesSec then
         WindowInstance.WidgetTogglesSec:CreateCheckbox(options.Name, options.Default, options.Callback)
     end
@@ -805,7 +802,7 @@ function Library:Notification(text, duration, color)
 end
 
 -- =============================================================================
--- [[ ОБНОВЛЕНИЕ ОФОРМЛЕНИЯ ПРИ СМЕНЕ ТЕМЫ ]]
+-- [[ ОБНОВЛЕНИЕ ТЕМЫ ]]
 -- =============================================================================
 function UpdateBackgroundTheme(accentColor, particleColors)
     THEME.Accent = accentColor
@@ -815,28 +812,23 @@ function UpdateBackgroundTheme(accentColor, particleColors)
         TitleTextLabel.TextColor3 = accentColor
     end
     
-    -- Обновление свечений
     for _, p in ipairs(allParticles) do
         p.Obj.ImageColor3 = particleColors[math.random(1, #particleColors)]
     end
     
-    -- Перекраска всех парящих виджетов (их AccentLine и обводок)
     for _, widget in ipairs(allWidgets) do
         if widget.AccentLine then widget.AccentLine.BackgroundColor3 = accentColor end
     end
     
-    -- Обновление чекбоксов
     for _, cb in ipairs(allCheckboxes) do
         if cb.CheckboxObj.State then cb.Indicator.BackgroundColor3 = THEME.Accent end
     end
     
-    -- Обновление слайдеров
     for _, sl in ipairs(allSliders) do
         if sl.BarFill then sl.BarFill.BackgroundColor3 = THEME.Accent end
         if sl.ValueDisplay and sl.ValueDisplay:IsA("TextLabel") then sl.ValueDisplay.TextColor3 = THEME.Accent end
     end
     
-    -- Обновление кнопок биндов
     for _, kb in ipairs(allKeybinds) do
         if kb:IsA("UIStroke") then
             kb.Color = THEME.Accent
@@ -845,25 +837,22 @@ function UpdateBackgroundTheme(accentColor, particleColors)
         end
     end
     
-    -- Обновление вкладок
     for _, t in ipairs(allTabs) do
         t.Indicator.BackgroundColor3 = THEME.Accent
         if WindowInstance and WindowInstance.ActiveTab == t then t.Button.TextColor3 = THEME.Accent end
     end
     
-    -- Обновление суб-вкладок
     for _, st in ipairs(allSubTabs) do
         st.Underline.BackgroundColor3 = THEME.Accent
     end
     
-    -- Обновление заголовков секций
     for _, title in ipairs(allSectionTitles) do
         title.TextColor3 = THEME.Accent
     end
 end
 
 -- =============================================================================
--- [[ ОРИГИНАЛЬНЫЕ МЕТОДЫ СОХРАНЕНИЯ JSON-КОНФИГОВ ]]
+-- [[ СОХРАНЕНИЕ / ЗАГРУЗКА ]]
 -- =============================================================================
 function SaveConfig(slotName)
     pcall(function()
@@ -889,7 +878,6 @@ function LoadConfig(slotName)
     end)
 end
 
--- Дополнительная эмуляция методов nhack для полной обратной совместимости
 Library.Theme = THEME
 getgenv().Perplexity = Library
 
