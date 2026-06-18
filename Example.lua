@@ -213,3 +213,45 @@ EffectsSec:CreateCheckbox("Screen Blur Effect", true, function(state)
 end)
 
 Aurora.Notify("Aurora Legacy", "Интерфейс инициализирован через внешнюю библиотеку.", 4)
+return AuroraExposed
+-- =============================================================================
+-- [[ СИСТЕМА СМЕНЫ ТЕМЫ (ОБНОВЛЕНИЕ ЦВЕТОВ) ]]
+-- =============================================================================
+local function UpdateBackgroundTheme(accentOrTable, particleColors)
+    -- Поддерживаем как одиночный Color3 для акцента, так и таблицу со всеми цветами темы
+    if typeof(accentOrTable) == "Color3" then
+        THEME.Accent = accentOrTable
+    elseif typeof(accentOrTable) == "table" then
+        for k, v in pairs(accentOrTable) do
+            if THEME[k] ~= nil and typeof(v) == "Color3" then
+                THEME[k] = v
+            end
+        end
+    end
+    
+    -- Обновляем палитру цветов для частиц
+    if particleColors and typeof(particleColors) == "table" then
+        activeParticleColors = particleColors
+    end
+
+    -- Плавно (через твины) обновляем цвета всех зарегистрированных UI элементов
+    for _, item in ipairs(themeObjects) do
+        pcall(function()
+            if item.Obj and item.Prop and THEME[item.Key] then
+                Tween(item.Obj, 0.3, {[item.Prop] = THEME[item.Key]})
+            end
+        end)
+    end
+
+    -- Плавно обновляем цвета уже летающих на экране частиц
+    for _, p in ipairs(allParticles) do
+        pcall(function()
+            if p.Obj then
+                local randomColor = activeParticleColors[math.random(1, #activeParticleColors)]
+                Tween(p.Obj, 0.5, {ImageColor3 = randomColor})
+            end
+        end)
+    end
+end
+
+AuroraExposed.UpdateBackgroundTheme = UpdateBackgroundTheme
