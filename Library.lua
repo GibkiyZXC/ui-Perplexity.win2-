@@ -1727,138 +1727,14 @@ end
 
 Window = Perplexity.new()
 
--- Вкладка Visuals
+-- Создание основных вкладок меню
 local VisualsTab = Window:CreateTab("Visuals")
-
--- 1. Секция: Player Esp
-local PlayerEspSec = VisualsTab:CreateSection("Player Esp", 1)
-local EnemyEspTab = PlayerEspSec:CreateSubTab("Enemy Esp")
-local TeamEspTab = PlayerEspSec:CreateSubTab("Team Esp")
-local EspSettingsTab = PlayerEspSec:CreateSubTab("Settings")
-
-TeamEspTab:CreateCheckbox("Chams", true, function() end):CreateColorpicker(THEME.Accent, function(c) end)
-TeamEspTab:CreateCheckbox("Box", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-TeamEspTab:CreateCheckbox("Filled Box", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-TeamEspTab:CreateCheckbox("Health Bar", true, function() end):CreateColorpicker(Color3.fromRGB(255, 30, 60), function(c) end)
-TeamEspTab:CreateCheckbox("Armor Bar", false, function() end):CreateColorpicker(Color3.fromRGB(0, 150, 255), function(c) end)
-TeamEspTab:CreateCheckbox("Tracer", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-TeamEspTab:CreateCheckbox("ViewAngle", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-TeamEspTab:CreateCheckbox("Name", true, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-TeamEspTab:CreateCheckbox("Weapon", true, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-TeamEspTab:CreateCheckbox("Offscreen", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-TeamEspTab:CreateCheckbox("Filled Offscreen", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-
--- 2. Секция: Item Esp
-local ItemEspSec = VisualsTab:CreateSection("Item Esp", 1)
-local ItemEspSub = ItemEspSec:CreateSubTab("Item Esp")
-local ItemSettingsSub = ItemEspSec:CreateSubTab("Settings")
-
-ItemEspSub.Container.Parent = ItemEspSec.Frame
-ItemEspSec.ActiveSubTab = ItemEspSub
-
-ItemEspSub:CreateCheckbox("Enabled", false, function() end)
-ItemEspSub:CreateCheckbox("Dropped C4", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-ItemEspSub:CreateCheckbox("Planted C4 Timer", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-ItemEspSub:CreateCheckbox("Dropped Weapons", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function(c) end)
-
--- 3. Секция: Combat Visuals
-local CombatVisualsSec = VisualsTab:CreateSection("Combat Visuals", 2)
-local CombatTab = CombatVisualsSec:CreateSubTab("Combat")
-local FovTab = CombatVisualsSec:CreateSubTab("FOV")
-
-FovTab:CreateCheckbox("Aim Assist Fov Circle", true, function() end):CreateColorpicker(THEME.Accent, function(c) end)
-FovTab:CreateCheckbox("Highlight On Target", true, function() end):CreateColorpicker(THEME.Accent, function(c) end)
-
-local posLabel = Instance.new("TextLabel")
-posLabel.Size = UDim2.new(1, 0, 0, 15)
-posLabel.BackgroundTransparency = 1
-posLabel.Text = "Aim Assist Circle Position"
-posLabel.TextColor3 = THEME.TextMuted
-posLabel.TextXAlignment = Enum.TextXAlignment.Left
-posLabel.ZIndex = 2
-AddTextStroke(posLabel)
-ApplyFont(posLabel, 10)
-posLabel.Parent = FovTab.Container
-
-local posDropdown = FovTab:CreateDropdown("", {"Mouse", "Center"}, "Mouse", function() end)
-
--- 4. Секция: World Modulation
-local WorldModSec = VisualsTab:CreateSection("World Modulation", 2)
-local WorldSubTab = WorldModSec:CreateSubTab("World")
-local GraphicsSubTab = WorldModSec:CreateSubTab("Graphics")
-
-WorldSubTab:CreateCheckbox("Ambient", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function() end)
-local WorldShiftCp = WorldSubTab:CreateCheckbox("Color Shift", false, function() end):CreateColorpicker(THEME.Accent, function() end)
-WorldSubTab:CreateSlider("Brightness", 0, 100, 0, function() end)
-
-local wtLabel = Instance.new("TextLabel")
-wtLabel.Size = UDim2.new(1, 0, 0, 15)
-wtLabel.BackgroundTransparency = 1
-wtLabel.Text = "World Time"
-wtLabel.TextColor3 = THEME.TextMuted
-wtLabel.TextXAlignment = Enum.TextXAlignment.Left
-wtLabel.ZIndex = 2
-AddTextStroke(wtLabel)
-ApplyFont(wtLabel, 10)
-wtLabel.Parent = WorldSubTab.Container
-
-WorldSubTab:CreateSlider("Time", 0, 24, 4, function() end)
-WorldSubTab:CreateCheckbox("Custom Fog", false, function() end):CreateColorpicker(Color3.fromRGB(255, 255, 255), function() end)
-WorldSubTab:CreateSlider("Fog Start", 0, 1000, 500, function() end)
-WorldSubTab:CreateSlider("Fog End", 0, 2000, 1000, function() end)
-WorldSubTab:CreateCheckbox("Change Skybox", false, function() end)
-WorldSubTab:CreateDropdown("Skybox", {"Above Clouds", "Purple Nebula", "Default"}, "Above Clouds", function() end)
-
--- 5. Секция: Screen
-local ScreenSec = VisualsTab:CreateSection("Screen", 3)
-local CameraSub = ScreenSec:CreateSubTab("Camera")
-local ViewmodelSub = ScreenSec:CreateSubTab("Viewmodel")
-local OthersSub = ScreenSec:CreateSubTab("Others")
-
-local remLabel = Instance.new("TextLabel")
-remLabel.Size = UDim2.new(1, 0, 0, 15)
-remLabel.BackgroundTransparency = 1
-remLabel.Text = "Removals"
-remLabel.TextColor3 = THEME.TextMuted
-remLabel.TextXAlignment = Enum.TextXAlignment.Left
-remLabel.ZIndex = 2
-AddTextStroke(remLabel)
-ApplyFont(remLabel, 10)
-remLabel.Parent = OthersSub.Container
-
-OthersSub:CreateCheckbox("Force Crosshair", false, function() end)
-OthersSub:CreateCheckbox("Dark Flashbang", false, function() end)
-OthersSub:CreateCheckbox("Hud Color", true, function() end):CreateColorpicker(THEME.Accent, function() end)
-OthersSub:CreateCheckbox("Custom Scope Crosshair", false, function() end)
-
--- 6. Секция: Self Chams
-local SelfChamsSec = VisualsTab:CreateSection("Self Chams", 3)
-local WeaponSub = SelfChamsSec:CreateSubTab("Weapon")
-local ArmsSub = SelfChamsSec:CreateSubTab("Arms")
-local AccSub = SelfChamsSec:CreateSubTab("Accessory")
-local SelfSub = SelfChamsSec:CreateSubTab("Self")
-
-WeaponSub:CreateDropdown("Type", {"Material", "Outline", "Wireframe"}, "Material", function() end)
-WeaponSub:CreateCheckbox("Weapon Chams", true, function() end):CreateColorpicker(THEME.Accent, function() end)
-WeaponSub:CreateDropdown("Material", {"Foil", "Neon", "Glass"}, "Foil", function() end)
-WeaponSub:CreateSlider("Reflectance", 0, 1, 16, function() end)
-WeaponSub:CreateDropdown("Animation", {"None", "Pulse", "Wave"}, "None", function() end)
-
--- 7. Секция: Grenade Modulation
-local GrenadeSec = VisualsTab:CreateSection("Grenade Modulation", 3)
-local SmokeSub = GrenadeSec:CreateSubTab("Smoke")
-local MolSub = GrenadeSec:CreateSubTab("Molotov")
-local HeSub = GrenadeSec:CreateSubTab("HE Grenade")
-
-SmokeSub:CreateCheckbox("Remove Particles", false, function() end)
-
--- Вспомогательные вкладки
 local LegitTab = Window:CreateTab("Legit")
 local RageTab = Window:CreateTab("Rage")
-local MiscTab = Window:CreateTab("Misc")
+local MuseTab = Window:CreateTab("Muse")
 local ChangerTab = Window:CreateTab("Changer")
 
--- Вкладка Settings
+-- Вкладка Settings (Настройки сохранены в оригинальном виде)
 local SettingsTab = Window:CreateTab("Settings")
 
 local SettingsSec = SettingsTab:CreateSection("Menu Control", 1)
