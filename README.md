@@ -1,20 +1,92 @@
-# Aurora Legacy UI Library
-Современная, оптимизированная и анимированная библиотека интерфейса для Roblox с поддержкой 3D ESP Preview, динамической сменой тем и сохранениями.
 
-## Быстрый старт (Использование библиотеки)
-```lua
-local Aurora = loadstring(game:HttpGet("ссылка_на_ваш_github_raw"))()
-local Window = Aurora.new()
+Часть 1. Почему не закрывалось меню и как это исправлено
+В предыдущей версии кода были две проблемы, мешавшие закрытию меню:
+Конфликт с processed: В функции скрытия стояла проверка if processed then return end. Roblox часто помечает нажатия клавиш вроде RightShift как «обработанные» (из-за внутренних биндов или других GUI-элементов), из-за чего блок закрытия просто не срабатывал. Проверка заменена на UserInputService:GetFocusedTextBox(), которая блокирует скрытие только в том случае, если вы пишете сообщение в игровой чат или вводите текст.
+Косметический бинд: Кнопка изменения клавиши в настройках (Hide / Show Key) была просто декоративной и не перезаписывала реальную клавишу скрытия. Теперь переменная toggleKey вынесена вверх, и при её смене в настройках меню начнет открываться/закрываться на новую выбранную клавишу.
+Часть 2. Подробный гайд по добавлению вкладок и функций
+Ваша UI-библиотека построена на иерархической структуре:
+Окно (Window) ➔ Вкладка (Tab) ➔ Секция (Section) [или Под-вкладка (Sub-Tab)] ➔ Функция (Checkbox, Slider, Dropdown и т.д.)
+1. Как добавить новую вкладку (Tab)
+Вкладки создаются на уровне объекта Window. Они отображаются в левом сайдбаре.
+code
+Lua
+local MyNewTab = Window:CreateTab("Название Вкладки")
+Где писать: Обычно новые вкладки объявляются в нижней части скрипта, где создаются VisualsTab, LegitTab и другие.
+2. Как добавить секцию (Section) во вкладку
+Секция — это визуальный блок (карточка), внутри которого группируются элементы. Каждая вкладка разделена на 3 вертикальные колонки (индексы 1, 2 или 3).
+code
+Lua
+-- Создаст секцию "Aimbot Settings" в первой (левой) колонке вкладки MyNewTab
+local MySection = MyNewTab:CreateSection("Aimbot Settings", 1)
+3. Как добавить функцию (элемент управления) в секцию
+Внутри секции вы можете создавать различные интерактивные элементы. Каждый элемент принимает коллбэк-функцию (callback), которая выполняется при изменении состояния.
+Чекбокс (Checkbox):
+Используется для включения/выключения функций (принимает true или false).
+code
+Lua
+MySection:CreateCheckbox("Включить Аимбот", false, function(state)
+    print("Состояние Аимбота:", state) -- Здесь пишется код вашей функции
+end)
+Слайдер (Slider):
+Используется для настройки числовых значений (минимальное, максимальное значение и стандартное).
+code
+Lua
+MySection:CreateSlider("Радиус (FOV)", 0, 360, 90, function(value)
+    print("Новый радиус FOV:", value)
+end)
+Выпадающий список (Dropdown):
+Используется для выбора режима из списка вариантов.
+code
+Lua
+MySection:CreateDropdown("Часть тела", {"Head", "Torso", "Random"}, "Head", function(selected)
+    print("Выбранная кость:", selected)
+end)
+Кнопка (Button):
+Выполняет разовое действие при нажатии.
+code
+Lua
+MySection:CreateButton("Сбросить настройки", function()
+    print("Настройки успешно сброшены")
+end)
+Бинд клавиши (Keybind):
+Позволяет привязать выполнение функции к клавише.
+code
+Lua
+MySection:CreateKeybind("Клавиша Активации", "F", function(key)
+    print("Вы нажали клавишу бинда:", key.Name)
+end)
+4. Как добавить функции с палитрой цветов или биндом (Сложные элементы)
+Некоторые элементы можно расширять. Например, к чекбоксу можно привязать выбор цвета или индивидуальный бинд:
+code
+Lua
+local Wallhack = MySection:CreateCheckbox("ESP Стены", false, function(state)
+    print("ESP активно:", state)
+end)
 
--- Создание вкладки
-local Tab = Window:CreateTab("My Tab")
+-- Добавит палитру цветов прямо в строке чекбокса
+Wallhack:CreateColorpicker(Color3.fromRGB(255, 0, 0), function(color)
+    print("Выбранный цвет ESP:", color)
+end)
 
--- Создание карточки раздела в 1-ой колонке
-local Section = Tab:CreateSection("My Section", 1)
+-- Добавит бинд клавиши для быстрой активации именно этого чекбокса
+Wallhack:CreateKeybind("X", function(key)
+    print("Переключено по бинду на клавишу:", key.Name)
+end)
+5. Как использовать внутренние под-вкладки (Sub-Tabs)
+Если секция слишком большая, вы можете разделить её на вкладки прямо внутри блока:
+code
+Lua
+local VisualsSection = MyNewTab:CreateSection("Visuals", 1)
 
--- Создание внутренних под-вкладок (Sub-Tabs)
-local SubTab = Section:CreateSubTab("My SubTab")
+-- Создаем две внутренние под-вкладки
+local PlayersSubTab = VisualsSection:CreateSubTab("Игроки")
+local WorldSubTab = VisualsSection:CreateSubTab("Мир")
 
--- Добавление элементов управления во внутреннюю вкладку
-SubTab:CreateCheckbox("My Option", true, function(state) print(state) end)
-SubTab:CreateSlider("My Slider", 0, 100, 50, function(val) print(val) end)
+-- Добавляем элементы внутрь под-вкладок (используя двоеточие `:` на под-вкладке)
+PlayersSubTab:CreateCheckbox("ESP на Боксы", false, function(state)
+    print("Boxes ESP:", state)
+end)
+
+WorldSubTab:CreateCheckbox("Ночное видение", false, function(state)
+    print("Fullbright:", state)
+end)
