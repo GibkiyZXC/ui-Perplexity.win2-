@@ -68,6 +68,7 @@ end
 
 local optBlurEnabled = true
 local optSnowEnabled = true
+local toggleKey = Enum.KeyCode.RightShift -- Глобальная переменная клавиши открытия/закрытия
 
 -- Глобальные списки динамической регистрации для авто-смены темы
 local allParticles = {}
@@ -78,6 +79,7 @@ local allKeybinds = {}
 local allTabs = {}
 local allSubTabs = {}
 local allSectionTitles = {}
+local allHoverGlows = {} -- Регистрация свечений для авто-смены темы
 
 local TitleTextLabel = nil
 local Window = nil
@@ -215,6 +217,23 @@ local function MakeDraggable(frame, dragHandle)
             frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
+end
+
+-- =============================================================================
+-- [[ ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ УПРАВЛЕНИЯ Z-INDEX ДРОПДАУНОВ ]]
+-- =============================================================================
+local function toggleDropdownZIndex(dropFrame, btn, isOpen)
+    local targetZ = isOpen and 100 or 2
+    dropFrame.ZIndex = targetZ
+    btn.ZIndex = targetZ
+    
+    local current = dropFrame.Parent
+    while current and not current:IsA("ScrollingFrame") and current.Name ~= "Perplexity_UI" and current.Name ~= "ContentArea" do
+        if current:IsA("Frame") or current:IsA("TextButton") then
+            current.ZIndex = targetZ
+        end
+        current = current.Parent
+    end
 end
 
 -- =============================================================================
@@ -719,8 +738,23 @@ function Perplexity:CreateTab(name)
     hoverBg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     hoverBg.BackgroundTransparency = 1
     hoverBg.ZIndex = 0
+    hoverBg.ClipsDescendants = true -- Обрезка для мягкого свечения
     AddCorner(hoverBg, 4)
     hoverBg.Parent = tab.Button
+    
+    -- СВЕТЯЩАЯСЯ СФЕРА (ЭФФЕКТ BLUR ОТ МЫШКИ)
+    local hoverGlow = Instance.new("ImageLabel")
+    hoverGlow.Size = UDim2.new(0, 130, 0, 130) -- Физический масштаб размытого неона
+    hoverGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+    hoverGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+    hoverGlow.BackgroundTransparency = 1
+    hoverGlow.Image = "rbxassetid://10822615828" -- Размытая высококачественная радиальная кисть
+    hoverGlow.ImageColor3 = THEME.Accent
+    hoverGlow.ImageTransparency = 1 -- Скрыто до первого наведения
+    hoverGlow.ZIndex = 1
+    hoverGlow.Parent = hoverBg
+    
+    table.insert(allHoverGlows, hoverGlow)
     
     local indicator = Instance.new("Frame")
     indicator.Size = UDim2.new(0, 0, 0.4, 0)
@@ -784,12 +818,23 @@ function Perplexity:CreateTab(name)
             Tween(tab.Button, 0.1, {TextColor3 = THEME.Text})
             Tween(hoverBg, 0.1, {BackgroundTransparency = 0.97})
         end
+        Tween(hoverGlow, 0.15, {ImageTransparency = 0.88}) -- Проявление неонового размытия
     end)
     
     tab.Button.MouseLeave:Connect(function()
         if self.ActiveTab ~= tab then
             Tween(tab.Button, 0.1, {TextColor3 = THEME.TextMuted})
             Tween(hoverBg, 0.1, {BackgroundTransparency = 1})
+        end
+        Tween(hoverGlow, 0.15, {ImageTransparency = 1}) -- Затухание неонового размытия
+    end)
+    
+    -- Динамическое отслеживание позиции мыши внутри плашки
+    tab.Button.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            local relativeX = input.Position.X - tab.Button.AbsolutePosition.X
+            local relativeY = input.Position.Y - tab.Button.AbsolutePosition.Y
+            Tween(hoverGlow, 0.08, {Position = UDim2.new(0, relativeX, 0, relativeY)})
         end
     end)
     
@@ -1466,6 +1511,7 @@ function Perplexity:CreateTab(name)
                 itemBtn.MouseButton1Click:Connect(function()
                     selectValue(item)
                     dropdown.Open = false
+                    toggleDropdownZIndex(dropFrame, btn, false) -- Сброс приоритета слоев
                     Tween(container, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
                     Tween(arrow, 0.15, {Rotation = 0})
                     task.delay(0.15, function() container.Visible = false end)
@@ -1474,6 +1520,7 @@ function Perplexity:CreateTab(name)
             
             btn.MouseButton1Click:Connect(function()
                 dropdown.Open = not dropdown.Open
+                toggleDropdownZIndex(dropFrame, btn, dropdown.Open) -- Поднятие приоритета рендеринга
                 if dropdown.Open then
                     container.Visible = true
                     Tween(container, 0.2, {Size = UDim2.new(1, 0, 0, targetHeight)})
@@ -1635,6 +1682,11 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
         p.Obj.ImageColor3 = particleColors[math.random(1, #particleColors)]
     end
     
+    -- Обновление мягкого свечения плашек вкладок (Hover Glow)
+    for _, glow in ipairs(allHoverGlows) do
+        glow.ImageColor3 = accentColor
+    end
+    
     -- Обновление рамки палитры
     if ColorpickerWindow then
         for _, stroke in ipairs(ColorpickerWindow:GetChildren()) do
@@ -1739,6 +1791,7 @@ local SettingsTab = Window:CreateTab("Settings")
 
 local SettingsSec = SettingsTab:CreateSection("Menu Control", 1)
 SettingsSec:CreateKeybind("Hide / Show Key", "RightShift", function(key)
+    toggleKey = key -- Теперь привязка клавиши корректно обновляет системный хоткей
     Notify("Интерфейс", "Клавиша скрытия изменена на: " .. key.Name)
 end)
 
@@ -1812,10 +1865,10 @@ end)
 -- =============================================================================
 -- [[ ОБРАБОТКА ХОТКЕЕВ ]]
 -- =============================================================================
-local toggleKey = Enum.KeyCode.RightShift
-
 UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
+    -- Не переключаем видимость, если игрок сейчас печатает текст в чат или TextBox
+    if UserInputService:GetFocusedTextBox() then return end
+    
     if input.KeyCode == toggleKey then
         menuVisible = not menuVisible
         
