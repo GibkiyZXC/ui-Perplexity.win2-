@@ -1764,15 +1764,12 @@ local function LoadConfig(slotName)
                     pcall(function()
                         Flags[flagName].Set(value)
                     end)
-                end
-            end
-            Notify("Configs", "Конфиг " .. slotName .. " успешно загружен!", 3)
-        else
-            Notify("Configs", "Конфигурация " .. slotName .. " не найдена.", 4)
         end
-         Notify("Configs", "Конфигурация " .. slotName .. " не найдена.", 4)
-      end
-  end)
-  end
- 
-  return Perplexity
+        Notify("Configs", "Конфиг " .. slotName .. " успешно загружен!", 3)
+    else
+        Notify("Configs", "Конфигурация " .. slotName .. " не найдена.", 4)
+    end
+end)
+end
+
+return Perplexity
