@@ -1770,10 +1770,9 @@ local function LoadConfig(slotName)
         else
             Notify("Configs", "Конфигурация " .. slotName .. " не найдена.", 4)
         end
-    end)
-end
--- Это последние строчки твоего Library.lua на GitHub:
-    end)
-end
-
-return Perplexity
+         Notify("Configs", "Конфигурация " .. slotName .. " не найдена.", 4)
+      end
+  end)
+  end
+ 
+  return Perplexity
