@@ -35,6 +35,7 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "Perplexity_UI"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true -- [FIX] Решает проблему со смещением координат и вылетом колорпикера
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local success, err = pcall(function()
@@ -83,6 +84,7 @@ local allHoverGlows = {} -- Регистрация свечений для ав�
 
 local TitleTextLabel = nil
 local Window = nil
+local menuVisible = true
 
 local activeParticleColors = {
     Color3.fromRGB(255, 30, 60),  -- Яркий неоново-красный
@@ -197,9 +199,11 @@ local function MakeDraggable(frame, dragHandle)
             dragStart = input.Position
             startPos = frame.Position
             
-            input.Changed:Connect(function()
+            local connection
+            connection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    connection:Disconnect() -- [FIX] Очистка неиспользуемых соединений
                 end
             end)
         end
@@ -312,11 +316,10 @@ while not mouse do
     end)
 end
 
-local menuVisible = true
-
-RunService.RenderStepped:Connect(function()
-    if menuVisible and mouse then
-        UserInputService.MouseIconEnabled = true
+-- [FIX] Инициализация аппаратного курсора при запуске один раз
+pcall(function()
+    UserInputService.MouseIconEnabled = true
+    if mouse then
         mouse.Icon = "rbxassetid://76631660114196"
     end
 end)
@@ -580,6 +583,7 @@ Perplexity.__index = Perplexity
 
 function Perplexity.new()
     local self = setmetatable({}, Perplexity)
+    Window = self -- Регистрация глобальной ссылки на окно
     
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = UDim2.new(0, 840, 0, 560)
@@ -633,7 +637,7 @@ function Perplexity.new()
     TitleText.Parent = LogoContainer
     TitleTextLabel = TitleText
     
-    MakeDraggable(self.MainFrame, Sidebar)
+    -- [FIX] Перетаскивание привязано только к заголовку, исключая перехват кликов на кнопках сайдбара
     MakeDraggable(self.MainFrame, LogoContainer)
     
     -- Поисковая панель
@@ -709,6 +713,26 @@ function Perplexity.new()
     end)
     
     return self
+end
+
+-- [FIX] Новый метод надежного переключения интерфейса (без микро-зависаний)
+function Perplexity:Toggle(state)
+    menuVisible = state
+    self.MainFrame.Visible = state
+    
+    local MenuBlur = Lighting:FindFirstChild("Perplexity_Blur")
+    if MenuBlur then
+        MenuBlur.Enabled = state
+    end
+    
+    pcall(function()
+        UserInputService.MouseIconEnabled = state
+        if state and mouse then
+            mouse.Icon = "rbxassetid://76631660114196"
+        elseif mouse then
+            mouse.Icon = ""
+        end
+    end)
 end
 
 function Perplexity:CreateTab(name)
@@ -1107,7 +1131,9 @@ function Perplexity:CreateTab(name)
             label.Font = Enum.Font.GothamMedium
             label.TextSize = 11
             label.TextXAlignment = Enum.TextXAlignment.Left
-            label.ZIndex = 2
+            -- [FIX] Снижен ZIndex, отключена интерактивность, чтобы клики гарантированно регистрировались на clickContainer
+            label.ZIndex = 1 
+            label.Active = false
             AddTextStroke(label)
             ApplyFont(label, 11)
             label.Parent = boxFrame
@@ -1464,14 +1490,16 @@ function Perplexity:CreateTab(name)
             
             local container = Instance.new("Frame")
             container.Size = UDim2.new(1, 0, 0, 0)
-            container.Position = UDim2.new(0, 0, 1, 2)
+            -- [FIX] Смещение контейнера на 38px, чтобы он отображался строго под кнопкой
+            container.Position = UDim2.new(0, 0, 0, 38)
             container.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
             container.ZIndex = 50
             container.ClipsDescendants = true
             container.Visible = false
             AddCorner(container, 4)
             AddStroke(container, THEME.Border, 1)
-            container.Parent = btn
+            -- [FIX] Изменен родитель на dropFrame во избежание бага вложенности кликабельных кнопок
+            container.Parent = dropFrame
             
             local dropLayout = Instance.new("UIListLayout")
             dropLayout.Parent = container
