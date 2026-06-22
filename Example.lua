@@ -44,45 +44,83 @@ local CONFIG = {
     TracerColor = Color3.fromRGB(255, 30, 60)         -- Цвет линии захвата
 }
 
--- Инициализация Drawing элементов (для Aim ESP)
+-- Таблица для ESP игроков
+local ActiveESPs = {}
+
+-- // 1. ОЧИСТКА ЭЛЕМЕНТОВ ИНТЕРФЕЙСА (Вызывается до создания новых!)
+local function cleanupGUI()
+    pcall(function()
+        local existing = CoreGui:FindFirstChild("Premium_ESP_Container") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Premium_ESP_Container")
+        if existing then
+            existing:Destroy()
+        end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Character then
+                local hl = p.Character:FindFirstChild("ESPHighlight")
+                if hl then hl:Destroy() end
+            end
+        end
+    end)
+end
+
+cleanupGUI()
+
+-- // 2. УМНАЯ ОЧИСТКА DRAWING ИЗ ГЛОБАЛЬНОГО ОКРУЖЕНИЯ (Решает проблему "призраков")
+if getgenv().Premium_FOVCircle then
+    pcall(function() getgenv().Premium_FOVCircle:Remove() end)
+    getgenv().Premium_FOVCircle = nil
+end
+if getgenv().Premium_TargetLine then
+    pcall(function() getgenv().Premium_TargetLine:Remove() end)
+    getgenv().Premium_TargetLine = nil
+end
+
+-- // 3. ИНИЦИАЛИЗАЦИЯ НОВЫХ DRAWING ЭЛЕМЕНТОВ С ЗАПИСЬЮ В GETGENV()
 local FOVCircle
 local TargetLine
 
 pcall(function()
-    FOVCircle = Drawing.new("Circle")
+    getgenv().Premium_FOVCircle = Drawing.new("Circle")
+    FOVCircle = getgenv().Premium_FOVCircle
     FOVCircle.Thickness = 1.5
     FOVCircle.NumSides = 64
     FOVCircle.Filled = false
     FOVCircle.Color = CONFIG.FOVColor
+    FOVCircle.Transparency = 1
     FOVCircle.Visible = false
 
-    TargetLine = Drawing.new("Line")
+    getgenv().Premium_TargetLine = Drawing.new("Line")
+    TargetLine = getgenv().Premium_TargetLine
     TargetLine.Thickness = 1.5
     TargetLine.Color = CONFIG.TracerColor
+    TargetLine.Transparency = 1
     TargetLine.Visible = false
 end)
 
--- Очистка предыдущих версий скрипта
-local function cleanup()
-    local existing = CoreGui:FindFirstChild("Premium_ESP_Container") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Premium_ESP_Container")
-    if existing then
-        existing:Destroy()
-    end
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p.Character then
-            local hl = p.Character:FindFirstChild("ESPHighlight")
-            if hl then hl:Destroy() end
-        end
-    end
-    if FOVCircle then pcall(function() FOVCircle:Remove() end) end
-    if TargetLine then pcall(function() TargetLine:Remove() end) end
+-- // ОБХОД КЭША GITHUB
+local cacheBypassUrl = "https://raw.githubusercontent.com/GibkiyZXC/ui-Perplexity.win2-/main/Library.lua?t=" .. tostring(os.time())
+
+local successLoad, rawLibrary = pcall(function()
+    return game:HttpGet(cacheBypassUrl)
+end)
+
+if not successLoad then
+    warn("[Loader Error]: Не удалось получить код библиотеки с GitHub.")
+    return
 end
 
-cleanup()
+local loaderFunction, compileError = loadstring(rawLibrary)
 
--- Подключение библиотеки UI Perplexity.win
-local Perplexity = loadstring(game:HttpGet("https://raw.githubusercontent.com/GibkiyZXC/ui-Perplexity.win2-/main/Library.lua"))()
-local Window = Perplexity.new() -- Библиотека не принимает аргументов в конструктор .new()
+if not loaderFunction then
+    warn("==========================================================")
+    warn("[Syntax Error in Library.lua]: Код библиотеки повреждён!")
+    warn("Ошибка компиляции: " .. tostring(compileError))
+    warn("==========================================================")
+    return
+end
+
+local Perplexity = loaderFunction()
+local Window = Perplexity.new("Premium Suite") -- Инициализируем проект!
 
 -- Вкладка Аимбота
 local AimbotTab = Window:CreateTab("Aimbot")
@@ -144,8 +182,10 @@ end)
 ESPSettings:CreateCheckbox("Master Toggle", true, function(state)
     CONFIG.EnableESP = state
     if not state then
-        for _, esp in pairs(ActiveESPs or {}) do
-            esp.MainFrame.Visible = false
+        for _, esp in pairs(ActiveESPs) do
+            if esp and esp.MainFrame then
+                esp.MainFrame.Visible = false
+            end
         end
     end
 end)
@@ -225,8 +265,6 @@ end)
 if not success then
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 end
-
-local ActiveESPs = {}
 
 -- Функция плавного изменения цвета (Зеленый -> Желтый -> Красный)
 local function getHealthColor(percent)
@@ -360,7 +398,9 @@ end
 
 local function removeESP(player)
     if ActiveESPs[player] then
-        ActiveESPs[player].MainFrame:Destroy()
+        pcall(function()
+            ActiveESPs[player].MainFrame:Destroy()
+        end)
         ActiveESPs[player] = nil
     end
     if player.Character then
@@ -400,12 +440,25 @@ local function isAimKeyPressed()
     return false
 end
 
+-- Безопасный определитель кости для R6/R15
+local function getAimPart(character)
+    if not character then return nil end
+    local partName = CONFIG.AimPart or "Head"
+    if partName == "Torso" then
+        return character:FindFirstChild("HumanoidRootPart") 
+            or character:FindFirstChild("UpperTorso") 
+            or character:FindFirstChild("Torso")
+    end
+    return character:FindFirstChild(partName)
+end
+
 -- Поиск ближайшего игрока к курсору (в пределах FOV)
 local function getClosestPlayer()
     local target = nil
     local shortestDistance = math.huge
     local mousePos = UserInputService:GetMouseLocation()
     local Camera = Workspace.CurrentCamera
+    if not Camera then return nil end
 
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
@@ -414,7 +467,7 @@ local function getClosestPlayer()
             end
 
             local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-            local hitPart = player.Character:FindFirstChild(CONFIG.AimPart or "Head")
+            local hitPart = getAimPart(player.Character)
 
             if humanoid and humanoid.Health > 0 and hitPart then
                 local screenPos, onScreen = Camera:WorldToViewportPoint(hitPart.Position)
@@ -431,17 +484,17 @@ local function getClosestPlayer()
     return target
 end
 
--- Резервный слушатель клавиши скрытия (для поддержки кастомных клавиш поверх файла библиотеки)
+-- Резервный принудительный слушатель клавиши скрытия
 local menuVisible = true
 UserInputService.InputBegan:Connect(function(input, processed)
     if UserInputService:GetFocusedTextBox() then return end
     
     local currentKey = getgenv().toggleKey or Enum.KeyCode.RightShift
-    -- Если используется не RightShift, управляем видимостью UI вручную во избежание конфликта
-    if currentKey ~= Enum.KeyCode.RightShift and input.KeyCode == currentKey then
+    if input.KeyCode == currentKey then
         if Window and Window.MainFrame then
             menuVisible = not menuVisible
             Window.MainFrame.Visible = menuVisible
+            
             local MenuBlur = game:GetService("Lighting"):FindFirstChild("Perplexity_Blur")
             if MenuBlur then
                 MenuBlur.Enabled = menuVisible
@@ -450,151 +503,185 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
--- // ГЛАВНЫЙ ИГРОВОЙ ЦИКЛ ОБНОВЛЕНИЯ
+-- // ГЛАВНЫЙ ИГРОВОЙ ЦИКЛ ОБНОВЛЕНИЯ (ЗАЩИЩЕННЫЙ РАСПРЕДЕЛЕННЫМИ PCALL)
 RunService.RenderStepped:Connect(function()
     local Camera = Workspace.CurrentCamera
     if not Camera then return end
 
-    -- 1. Обновление визуалов Аимбота (Aim ESP)
-    local mousePos = UserInputService:GetMouseLocation()
-    if FOVCircle then
-        if CONFIG.ShowFOV then
-            FOVCircle.Position = mousePos
-            FOVCircle.Radius = CONFIG.AimFOV
-            FOVCircle.Color = CONFIG.FOVColor
-            FOVCircle.Visible = true
-        else
-            FOVCircle.Visible = false
+    local mousePos
+    pcall(function()
+        mousePos = UserInputService:GetMouseLocation()
+    end)
+    if not mousePos then mousePos = Vector2.new(0, 0) end
+
+    -- 1. Обновление визуалов Аимбота (FOVCircle)
+    pcall(function()
+        if FOVCircle then
+            if CONFIG.ShowFOV then
+                FOVCircle.Position = mousePos
+                FOVCircle.Radius = CONFIG.AimFOV
+                FOVCircle.Color = CONFIG.FOVColor
+                FOVCircle.Transparency = 1
+                FOVCircle.Visible = true
+            else
+                FOVCircle.Visible = false
+            end
         end
-    end
+    end)
 
-    local targetPlayer = getClosestPlayer()
+    local targetPlayer
+    pcall(function()
+        targetPlayer = getClosestPlayer()
+    end)
 
-    if TargetLine then
-        if CONFIG.ShowTargetTracer and targetPlayer and targetPlayer.Character then
-            local part = targetPlayer.Character:FindFirstChild(CONFIG.AimPart or "Head")
-            if part then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                if onScreen then
-                    TargetLine.From = mousePos
-                    TargetLine.To = Vector2.new(screenPos.X, screenPos.Y)
-                    TargetLine.Color = CONFIG.TracerColor
-                    TargetLine.Visible = true
+    -- 2. Обновление Target Line (Tracer)
+    pcall(function()
+        if TargetLine then
+            if CONFIG.ShowTargetTracer and targetPlayer and targetPlayer.Character then
+                local part = getAimPart(targetPlayer.Character)
+                if part then
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                    if onScreen then
+                        TargetLine.From = mousePos
+                        TargetLine.To = Vector2.new(screenPos.X, screenPos.Y)
+                        TargetLine.Color = CONFIG.TracerColor
+                        TargetLine.Transparency = 1
+                        TargetLine.Visible = true
+                    else
+                        TargetLine.Visible = false
+                    end
                 else
                     TargetLine.Visible = false
                 end
             else
                 TargetLine.Visible = false
             end
-        else
-            TargetLine.Visible = false
         end
-    end
+    end)
 
-    -- 2. Логика Аимбота (Доводка)
-    if CONFIG.AimActive and isAimKeyPressed() and targetPlayer and targetPlayer.Character then
-        local part = targetPlayer.Character:FindFirstChild(CONFIG.AimPart or "Head")
-        if part then
-            local targetCFrame = CFrame.new(Camera.CFrame.Position, part.Position)
-            if CONFIG.AimSmoothness > 1 then
-                Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / CONFIG.AimSmoothness)
-            else
-                Camera.CFrame = targetCFrame
+    -- 3. Логика Аимбота (Доводка камеры)
+    pcall(function()
+        if CONFIG.AimActive and isAimKeyPressed() and targetPlayer and targetPlayer.Character then
+            local part = getAimPart(targetPlayer.Character)
+            if part then
+                local targetCFrame = CFrame.new(Camera.CFrame.Position, part.Position)
+                if CONFIG.AimSmoothness > 1 then
+                    Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / CONFIG.AimSmoothness)
+                else
+                    Camera.CFrame = targetCFrame
+                end
             end
         end
-    end
+    end)
 
-    -- 3. Обновление ESP игроков
+    -- 4. Обновление ESP Игроков
     for player, esp in pairs(ActiveESPs) do
-        local character = player.Character
-        if CONFIG.EnableESP and character then
-            -- Проверка на команду
-            if CONFIG.TeamCheck and player.Team == LocalPlayer.Team then
+        pcall(function()
+            if not esp or typeof(esp) ~= "table" then return end
+            if not esp.MainFrame then return end
+
+            local character = player.Character
+            if not character then
                 esp.MainFrame.Visible = false
-                local hl = character:FindFirstChild("ESPHighlight")
-                if hl then hl:Destroy() end
-                continue
+                return
             end
 
-            local hrp = character:FindFirstChild("HumanoidRootPart")
-            local humanoid = character:FindFirstChild("Humanoid")
+            if CONFIG.EnableESP then
+                if CONFIG.TeamCheck and player.Team == LocalPlayer.Team then
+                    esp.MainFrame.Visible = false
+                    local hl = character:FindFirstChild("ESPHighlight")
+                    if hl then hl:Destroy() end
+                    return
+                end
 
-            if hrp and humanoid and humanoid.Health > 0 then
-                local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                local hrp = character:FindFirstChild("HumanoidRootPart")
+                local humanoid = character:FindFirstChild("Humanoid")
 
-                if onScreen then
-                    local topViewport = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
-                    local bottomViewport = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
+                if hrp and humanoid and humanoid.Health > 0 then
+                    local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
 
-                    local height = math.abs(topViewport.Y - bottomViewport.Y)
-                    local width = height * 0.58
+                    if onScreen then
+                        local topViewport = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
+                        local bottomViewport = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
 
-                    -- Позиционирование контейнера
-                    esp.MainFrame.Size = UDim2.new(0, width, 0, height)
-                    esp.MainFrame.Position = UDim2.new(0, topViewport.X - width/2, 0, topViewport.Y)
-                    esp.MainFrame.Visible = true
+                        local height = math.abs(topViewport.Y - bottomViewport.Y)
+                        local width = height * 0.58
 
-                    -- Обновление динамических цветов из настроек
-                    esp.BoxStroke.Color = CONFIG.BoxColor
-                    esp.NameLabel.TextColor3 = CONFIG.NameColor
-                    esp.DistanceLabel.TextColor3 = CONFIG.DistanceColor
+                        -- Позиционирование рамки
+                        esp.MainFrame.Size = UDim2.new(0, width, 0, height)
+                        esp.MainFrame.Position = UDim2.new(0, topViewport.X - width/2, 0, topViewport.Y)
+                        esp.MainFrame.Visible = true
 
-                    -- Отрисовка рамки
-                    esp.Box.Visible = CONFIG.ShowBox
+                        -- Обновление динамических цветов
+                        if esp.BoxStroke then esp.BoxStroke.Color = CONFIG.BoxColor end
+                        if esp.NameLabel then esp.NameLabel.TextColor3 = CONFIG.NameColor end
+                        if esp.DistanceLabel then esp.DistanceLabel.TextColor3 = CONFIG.DistanceColor end
 
-                    -- Никнеймы и дистанция
-                    esp.NameLabel.Visible = CONFIG.ShowNames
-                    esp.DistanceLabel.Visible = CONFIG.ShowDistance
-                    local distance = math.floor((Camera.CFrame.Position - hrp.Position).Magnitude)
-                    esp.DistanceLabel.Text = tostring(distance) .. " studs"
-
-                    -- Шкала здоровья
-                    local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
-                    esp.HealthBar.Size = UDim2.new(1, 0, healthPercent, 0)
-                    esp.HealthBar.Parent.Visible = CONFIG.ShowHealth
-
-                    local healthColor = getHealthColor(healthPercent)
-                    esp.HealthBar.BackgroundColor3 = healthColor
-                    esp.HealthGlow.ImageColor3 = healthColor
-                    esp.HealthGlow.ImageTransparency = CONFIG.GlowTransparency
-
-                    -- Число ХП
-                    if CONFIG.ShowHealth and healthPercent < 0.98 then
-                        esp.HealthText.Text = tostring(math.floor(humanoid.Health))
-                        esp.HealthText.Position = UDim2.new(0, -10, 1 - healthPercent, 0)
-                        esp.HealthText.Visible = true
-                    else
-                        esp.HealthText.Visible = false
-                    end
-
-                    -- 3D-свечение персонажа
-                    if CONFIG.Enable3DHighlight then
-                        local highlight = character:FindFirstChild("ESPHighlight")
-                        if not highlight then
-                            highlight = Instance.new("Highlight")
-                            highlight.Name = "ESPHighlight"
-                            highlight.Parent = character
+                        if esp.Box then esp.Box.Visible = CONFIG.ShowBox end
+                        if esp.NameLabel then esp.NameLabel.Visible = CONFIG.ShowNames end
+                        
+                        if esp.DistanceLabel then 
+                            esp.DistanceLabel.Visible = CONFIG.ShowDistance
+                            local distance = math.floor((Camera.CFrame.Position - hrp.Position).Magnitude)
+                            esp.DistanceLabel.Text = tostring(distance) .. " studs"
                         end
-                        highlight.FillColor = healthColor
-                        highlight.OutlineColor = healthColor
-                        highlight.FillTransparency = CONFIG.HighlightFillTransparency
-                        highlight.OutlineTransparency = CONFIG.HighlightOutlineTransparency
+
+                        -- Шкала здоровья
+                        if esp.HealthBar and esp.HealthBar.Parent then
+                            local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+                            esp.HealthBar.Size = UDim2.new(1, 0, healthPercent, 0)
+                            esp.HealthBar.Parent.Visible = CONFIG.ShowHealth
+
+                            local healthColor = getHealthColor(healthPercent)
+                            esp.HealthBar.BackgroundColor3 = healthColor
+                            
+                            if esp.HealthGlow then
+                                esp.HealthGlow.ImageColor3 = healthColor
+                                esp.HealthGlow.ImageTransparency = CONFIG.GlowTransparency
+                            end
+
+                            -- Число ХП
+                            if esp.HealthText then
+                                if CONFIG.ShowHealth and healthPercent < 0.98 then
+                                    esp.HealthText.Text = tostring(math.floor(humanoid.Health))
+                                    esp.HealthText.Position = UDim2.new(0, -10, 1 - healthPercent, 0)
+                                    esp.HealthText.Visible = true
+                                else
+                                    esp.HealthText.Visible = false
+                                end
+                            end
+                        end
+
+                        -- Свечение 3D Highlight
+                        if CONFIG.Enable3DHighlight then
+                            local highlight = character:FindFirstChild("ESPHighlight")
+                            if not highlight then
+                                highlight = Instance.new("Highlight")
+                                highlight.Name = "ESPHighlight"
+                                highlight.Parent = character
+                            end
+                            local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+                            highlight.FillColor = getHealthColor(healthPercent)
+                            highlight.OutlineColor = getHealthColor(healthPercent)
+                            highlight.FillTransparency = CONFIG.HighlightFillTransparency
+                            highlight.OutlineTransparency = CONFIG.HighlightOutlineTransparency
+                        else
+                            local hl = character:FindFirstChild("ESPHighlight")
+                            if hl then hl:Destroy() end
+                        end
                     else
-                        local hl = character:FindFirstChild("ESPHighlight")
-                        if hl then hl:Destroy() end
+                        esp.MainFrame.Visible = false
                     end
                 else
                     esp.MainFrame.Visible = false
+                    local hl = character:FindFirstChild("ESPHighlight")
+                    if hl then hl:Destroy() end
                 end
             else
                 esp.MainFrame.Visible = false
                 local hl = character:FindFirstChild("ESPHighlight")
                 if hl then hl:Destroy() end
             end
-        else
-            esp.MainFrame.Visible = false
-            local hl = character:FindFirstChild("ESPHighlight")
-            if hl then hl:Destroy() end
-        end
+        end)
     end
 end)
