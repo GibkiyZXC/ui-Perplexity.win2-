@@ -1911,4 +1911,3 @@ getgenv().Perplexity = {
     SaveConfig = SaveConfig,
     LoadConfig = LoadConfig
 }
-return Perplexity
