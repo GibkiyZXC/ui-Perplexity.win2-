@@ -1772,7 +1772,7 @@ local function LoadConfig(slotName)
         end
     end)
 end
--- Это самый последний end библиотеки (который закрывает функции выше)
+-- Это последние строчки твоего Library.lua на GitHub:
     end)
 end
 
