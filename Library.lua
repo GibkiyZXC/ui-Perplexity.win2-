@@ -1758,18 +1758,19 @@ local function LoadConfig(slotName)
         if isfile(path) then
             local content = readfile(path)
             local data = HttpService:JSONDecode(content)
-            
+
             for flagName, value in pairs(data) do
                 if Flags[flagName] then
                     pcall(function()
                         Flags[flagName].Set(value)
                     end)
+                end
+            end
+            Notify("Configs", "Конфиг " .. slotName .. " успешно загружен!", 3)
+        else
+            Notify("Configs", "Конфигурация " .. slotName .. " не найдена.", 4)
         end
-        Notify("Configs", "Конфиг " .. slotName .. " успешно загружен!", 3)
-    else
-        Notify("Configs", "Конфигурация " .. slotName .. " не найдена.", 4)
-    end
-end)
+    end)
 end
 
 return Perplexity
