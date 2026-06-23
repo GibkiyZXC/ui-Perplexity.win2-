@@ -942,7 +942,7 @@ function Perplexity:CreateTab(name)
         AddDoubleStroke(section.Frame)
         section.Frame.Parent = col
         
-        table.insert(allSections, section.Frame) -- Регистрация секции для динамического перекрашивания
+        table.insert(allSections, section.Frame)
         
         local secLayout = Instance.new("UIListLayout")
         secLayout.SortOrder = Enum.SortOrder.LayoutOrder 
@@ -1270,7 +1270,6 @@ function Perplexity:CreateTab(name)
                 table.insert(allKeybinds, bindBtn)
                 
                 local function setKey(keyName)
-                    -- Сокращение длинных названий клавиш
                     local cleanName = tostring(keyName)
                     cleanName = cleanName:gsub("MouseButton", "MB")
                     cleanName = cleanName:gsub("LeftShift", "LShift")
@@ -1283,9 +1282,12 @@ function Perplexity:CreateTab(name)
                     kb.Key = cleanName
                     bindBtn.Text = cleanName
                     SaveFlags[name .. "_key"] = cleanName
+                    
+                    task.spawn(function()
+                        pcall(cb, cleanName)
+                    end)
                 end
                 
-                -- Инициализация красивого короткого имени сразу при создании
                 setKey(kb.Key)
 
                 bindBtn.MouseEnter:Connect(function()
@@ -1309,13 +1311,11 @@ function Perplexity:CreateTab(name)
                             setKey(inKey.KeyCode.Name)
                             kb.Binding = false
                             Tween(kbStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
-                            task.spawn(function() pcall(cb, inKey.KeyCode) end)
                             conn:Disconnect()
                         elseif inKey.UserInputType == Enum.UserInputType.MouseButton1 or inKey.UserInputType == Enum.UserInputType.MouseButton2 then
                             setKey(inKey.UserInputType.Name == "MouseButton1" and "MB1" or "MB2")
                             kb.Binding = false
                             Tween(kbStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
-                            task.spawn(function() pcall(cb, inKey.UserInputType) end)
                             conn:Disconnect()
                         end
                     end)
@@ -1351,6 +1351,10 @@ function Perplexity:CreateTab(name)
                     cp.Value = colorValue
                     cpBtn.BackgroundColor3 = colorValue
                     SaveFlags[name .. "_color"] = colorValue:ToHex()
+                    
+                    task.spawn(function()
+                        pcall(cb, colorValue)
+                    end)
                 end
                 
                 cpBtn.MouseEnter:Connect(function()
@@ -1365,7 +1369,7 @@ function Perplexity:CreateTab(name)
                     activeColorpicker = {
                         H = 0, S = 1, V = 1,
                         Button = cpBtn,
-                        Callback = cb
+                        Callback = setColor
                     }
                     
                     local h, s, v = cp.Value:ToHSV()
@@ -1698,7 +1702,7 @@ function Perplexity:CreateTab(name)
             kbFrame.Parent = parent
             
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -60, 1, 0) -- Изначально, будет реактивно обновлено под размер кнопки
+            label.Size = UDim2.new(1, -60, 1, 0)
             label.BackgroundTransparency = 1
             label.Text = name
             label.TextColor3 = THEME.TextMuted
@@ -1712,7 +1716,7 @@ function Perplexity:CreateTab(name)
             local bindBtn = Instance.new("TextButton")
             bindBtn.AnchorPoint = Vector2.new(1, 0.5)
             bindBtn.Position = UDim2.new(1, 0, 0.5, 0)
-            bindBtn.Size = UDim2.new(0, 0, 0, 18) -- Высота 18, ширина автоматическая
+            bindBtn.Size = UDim2.new(0, 0, 0, 18) 
             bindBtn.AutomaticSize = Enum.AutomaticSize.X
             bindBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
             bindBtn.Text = tostring(keybind.Key)
@@ -1739,7 +1743,6 @@ function Perplexity:CreateTab(name)
             table.insert(allKeybinds, bindBtn)
             
             local function setKey(keyName)
-                -- Сокращение длинных названий клавиш
                 local cleanName = tostring(keyName)
                 cleanName = cleanName:gsub("MouseButton", "MB")
                 cleanName = cleanName:gsub("LeftShift", "LShift")
@@ -1752,6 +1755,10 @@ function Perplexity:CreateTab(name)
                 keybind.Key = cleanName
                 bindBtn.Text = cleanName
                 SaveFlags[name] = cleanName
+                
+                task.spawn(function()
+                    pcall(callback, cleanName)
+                end)
             end
             
             setKey(keybind.Key)
@@ -1777,19 +1784,16 @@ function Perplexity:CreateTab(name)
                         setKey(inKey.KeyCode.Name)
                         keybind.Binding = false
                         Tween(bindStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
-                        task.spawn(function() pcall(callback, inKey.KeyCode) end)
                         conn:Disconnect()
                     elseif inKey.UserInputType == Enum.UserInputType.MouseButton1 or inKey.UserInputType == Enum.UserInputType.MouseButton2 then
                         setKey(inKey.UserInputType.Name == "MouseButton1" and "MB1" or "MB2")
                         keybind.Binding = false
                         Tween(bindStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
-                        task.spawn(function() pcall(callback, inKey.UserInputType) end)
                         conn:Disconnect()
                     end
                 end)
             end)
             
-            -- Реактивное управление шириной текстового поля
             local function updateLabelSize()
                 local btnWidth = bindBtn.AbsoluteSize.X
                 label.Size = UDim2.new(1, -btnWidth - 10, 1, 0)
@@ -1865,4 +1869,14 @@ local function LoadConfig(slotName)
     end)
 end
 
+-- Экспортируем методы сохранения и загрузки во внешний класс Perplexity
+function Perplexity:SaveConfig(slotName)
+    SaveConfig(slotName)
+end
+
+function Perplexity:LoadConfig(slotName)
+    LoadConfig(slotName)
+end
+
 return Perplexity
+```
