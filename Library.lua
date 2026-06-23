@@ -1,6 +1,6 @@
 -- =============================================================================
 -- [[ PERPLEXITY.WIN - OPEN-SOURCE HIGH-FIDELITY UI FRAMEWORK ]]
--- [[ Redesigned & Perfect Alignment Edition ]]
+-- [[ Reactive & Perfect Layout Edition ]]
 -- =============================================================================
 
 if getgenv().Perplexity then
@@ -1048,7 +1048,7 @@ function Perplexity:CreateTab(name)
             boxFrame.Parent = parent
             
             local clickContainer = Instance.new("TextButton")
-            clickContainer.Size = UDim2.new(1, -120, 1, 0)
+            clickContainer.Size = UDim2.new(1, 0, 1, 0) -- Изначально на всю ширину карточки
             clickContainer.BackgroundTransparency = 1
             clickContainer.Text = ""
             clickContainer.Active = true
@@ -1093,9 +1093,12 @@ function Perplexity:CreateTab(name)
             ApplyFont(label, 11)
             label.Parent = clickContainer
             
+            -- Реактивный контейнер subElements (ширина подстраивается автоматически под детей)
             local subElements = Instance.new("Frame")
-            subElements.Size = UDim2.new(0, 120, 1, 0)
-            subElements.Position = UDim2.new(1, -120, 0, 0)
+            subElements.Size = UDim2.new(0, 0, 1, 0) 
+            subElements.AutomaticSize = Enum.AutomaticSize.X
+            subElements.Position = UDim2.new(1, 0, 0, 0)
+            subElements.AnchorPoint = Vector2.new(1, 0) 
             subElements.BackgroundTransparency = 1
             subElements.ZIndex = 4
             subElements.Parent = boxFrame
@@ -1107,6 +1110,15 @@ function Perplexity:CreateTab(name)
             subLayout.VerticalAlignment = Enum.VerticalAlignment.Center
             subLayout.Padding = UDim.new(0, 8)
             subLayout.Parent = subElements
+            
+            -- Умный слушатель размеров, который сужает текстовое поле только когда справа появляются кнопки
+            local function updateLayout()
+                local subWidth = subElements.AbsoluteSize.X
+                local paddingOffset = (subWidth > 0) and (subWidth + 8) or 0
+                clickContainer.Size = UDim2.new(1, -paddingOffset, 1, 0)
+            end
+            subElements:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout)
+            task.spawn(updateLayout)
             
             local function update()
                 if checkbox.State then
@@ -1146,7 +1158,8 @@ function Perplexity:CreateTab(name)
                 local kb = {Key = default or "None", Binding = false}
                 
                 local bindBtn = Instance.new("TextButton")
-                bindBtn.Size = UDim2.new(0, 68, 0, 18)
+                bindBtn.Size = UDim2.new(0, 0, 0, 18) -- Динамическая ширина под длину клавиши
+                bindBtn.AutomaticSize = Enum.AutomaticSize.X
                 bindBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
                 bindBtn.Text = tostring(kb.Key)
                 bindBtn.TextColor3 = THEME.Accent
@@ -1158,6 +1171,16 @@ function Perplexity:CreateTab(name)
                 AddCorner(bindBtn, 3)
                 local kbStroke = AddStroke(bindBtn, Color3.fromRGB(56, 56, 74), 1)
                 bindBtn.Parent = subElements
+                
+                local btnPadding = Instance.new("UIPadding")
+                btnPadding.PaddingLeft = UDim.new(0, 6)
+                btnPadding.PaddingRight = UDim.new(0, 6)
+                btnPadding.Parent = bindBtn
+                
+                local sizeConstraint = Instance.new("UISizeConstraint")
+                sizeConstraint.MinSize = Vector2.new(40, 0)
+                sizeConstraint.MaxSize = Vector2.new(110, 18)
+                sizeConstraint.Parent = bindBtn
                 
                 table.insert(allKeybinds, bindBtn)
                 
@@ -1577,7 +1600,7 @@ function Perplexity:CreateTab(name)
             kbFrame.Parent = parent
             
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -90, 1, 0)
+            label.Size = UDim2.new(1, -60, 1, 0) -- Изначально, будет реактивно обновлено под размер кнопки
             label.BackgroundTransparency = 1
             label.Text = name
             label.TextColor3 = THEME.TextMuted
@@ -1589,8 +1612,10 @@ function Perplexity:CreateTab(name)
             label.Parent = kbFrame
             
             local bindBtn = Instance.new("TextButton")
-            bindBtn.Size = UDim2.new(0, 80, 0, 20) 
-            bindBtn.Position = UDim2.new(1, -80, 0.5, -10) 
+            bindBtn.AnchorPoint = Vector2.new(1, 0.5)
+            bindBtn.Position = UDim2.new(1, 0, 0.5, 0)
+            bindBtn.Size = UDim2.new(0, 0, 0, 18) -- Высота 18, ширина автоматическая
+            bindBtn.AutomaticSize = Enum.AutomaticSize.X
             bindBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
             bindBtn.Text = tostring(keybind.Key)
             bindBtn.TextColor3 = THEME.Accent
@@ -1602,6 +1627,24 @@ function Perplexity:CreateTab(name)
             AddCorner(bindBtn, 3)
             local bindStroke = AddStroke(bindBtn, Color3.fromRGB(56, 56, 74), 1)
             bindBtn.Parent = kbFrame
+            
+            local btnPadding = Instance.new("UIPadding")
+            btnPadding.PaddingLeft = UDim.new(0, 8)
+            btnPadding.PaddingRight = UDim.new(0, 8)
+            btnPadding.Parent = bindBtn
+            
+            local sizeConstraint = Instance.new("UISizeConstraint")
+            sizeConstraint.MinSize = Vector2.new(45, 0)
+            sizeConstraint.MaxSize = Vector2.new(120, 18)
+            sizeConstraint.Parent = bindBtn
+            
+            -- Реактивное управление шириной текстового поля
+            local function updateLabelSize()
+                local btnWidth = bindBtn.AbsoluteSize.X
+                label.Size = UDim2.new(1, -btnWidth - 10, 1, 0)
+            end
+            bindBtn:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLabelSize)
+            task.spawn(updateLabelSize)
             
             table.insert(allKeybinds, bindBtn)
             
