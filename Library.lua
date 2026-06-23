@@ -1086,6 +1086,7 @@ function Perplexity:CreateTab(name)
             label.Font = Enum.Font.GothamMedium
             label.TextSize = 11
             label.TextXAlignment = Enum.TextXAlignment.Left
+            label.TextTruncate = Enum.TextTruncate.AtEnd
             label.ZIndex = 1 
             label.Active = false
             AddTextStroke(label)
@@ -1308,12 +1309,13 @@ function Perplexity:CreateTab(name)
             sliderFrame.Parent = parent
             
             local title = Instance.new("TextLabel")
-            title.Size = UDim2.new(1, 0, 0, 15)
+            title.Size = UDim2.new(1, -45, 0, 15)
             title.Position = UDim2.new(0, 0, 0, 0)
             title.BackgroundTransparency = 1
             title.Text = name
             title.TextColor3 = THEME.TextMuted
             title.TextXAlignment = Enum.TextXAlignment.Left
+            title.TextTruncate = Enum.TextTruncate.AtEnd
             title.ZIndex = 2
             AddTextStroke(title)
             ApplyFont(title, 11)
@@ -1575,11 +1577,12 @@ function Perplexity:CreateTab(name)
             kbFrame.Parent = parent
             
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(0.6, 0, 1, 0)
+            label.Size = UDim2.new(1, -90, 1, 0)
             label.BackgroundTransparency = 1
             label.Text = name
             label.TextColor3 = THEME.TextMuted
             label.TextXAlignment = Enum.TextXAlignment.Left
+            label.TextTruncate = Enum.TextTruncate.AtEnd
             label.ZIndex = 2
             AddTextStroke(label)
             ApplyFont(label, 11)
