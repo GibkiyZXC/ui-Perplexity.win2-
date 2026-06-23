@@ -1,6 +1,6 @@
 -- =============================================================================
 -- [[ PERPLEXITY.WIN - OPEN-SOURCE HIGH-FIDELITY UI FRAMEWORK ]]
--- [[ Redesigned & Aligned Edition ]]
+-- [[ Redesigned & Perfect Alignment Edition ]]
 -- =============================================================================
 
 if getgenv().Perplexity then
@@ -760,6 +760,7 @@ function Perplexity:CreateTab(name)
         col.Parent = tab.Frame
         
         local colList = Instance.new("UIListLayout")
+        colList.SortOrder = Enum.SortOrder.LayoutOrder
         colList.Padding = UDim.new(0, 12)
         colList.Parent = col
         
@@ -842,7 +843,8 @@ function Perplexity:CreateTab(name)
         local section = {
             Elements = {},
             SubTabs = {},
-            ActiveSubTab = nil
+            ActiveSubTab = nil,
+            ElementCount = 0 
         }
         
         section.Frame = Instance.new("Frame")
@@ -856,6 +858,7 @@ function Perplexity:CreateTab(name)
         section.Frame.Parent = col
         
         local secLayout = Instance.new("UIListLayout")
+        secLayout.SortOrder = Enum.SortOrder.LayoutOrder 
         secLayout.Padding = UDim.new(0, 10)
         secLayout.Parent = section.Frame
         
@@ -895,11 +898,12 @@ function Perplexity:CreateTab(name)
                 section.SubTabsHeader.Size = UDim2.new(1, 0, 0, 20)
                 section.SubTabsHeader.BackgroundTransparency = 1
                 section.SubTabsHeader.ZIndex = 2
-                section.SubTabsHeader.LayoutOrder = -1
+                section.SubTabsHeader.LayoutOrder = -50 
                 section.SubTabsHeader.Parent = section.Frame
                 
                 local headerLayout = Instance.new("UIListLayout")
                 headerLayout.FillDirection = Enum.FillDirection.Horizontal
+                headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
                 headerLayout.Padding = UDim.new(0, 12)
                 headerLayout.Parent = section.SubTabsHeader
             end
@@ -933,6 +937,7 @@ function Perplexity:CreateTab(name)
             subTab.Container.Parent = section.Frame
             
             local containerLayout = Instance.new("UIListLayout")
+            containerLayout.SortOrder = Enum.SortOrder.LayoutOrder
             containerLayout.Padding = UDim.new(0, 10)
             containerLayout.Parent = subTab.Container
             
@@ -984,10 +989,13 @@ function Perplexity:CreateTab(name)
         
         function section:CreateButtonInternal(name, callback, parent)
             parent = parent or section.Frame
+            
+            section.ElementCount = section.ElementCount + 1
             local btnFrame = Instance.new("Frame")
             btnFrame.Size = UDim2.new(1, 0, 0, 24)
             btnFrame.BackgroundTransparency = 1
             btnFrame.ZIndex = 2
+            btnFrame.LayoutOrder = section.ElementCount
             btnFrame.Parent = parent
             
             local btn = Instance.new("TextButton")
@@ -1031,10 +1039,12 @@ function Perplexity:CreateTab(name)
             parent = parent or section.Frame
             local checkbox = {State = default or false}
             
+            section.ElementCount = section.ElementCount + 1
             local boxFrame = Instance.new("Frame")
             boxFrame.Size = UDim2.new(1, 0, 0, 24) 
             boxFrame.BackgroundTransparency = 1
             boxFrame.ZIndex = 2
+            boxFrame.LayoutOrder = section.ElementCount
             boxFrame.Parent = parent
             
             local clickContainer = Instance.new("TextButton")
@@ -1091,6 +1101,7 @@ function Perplexity:CreateTab(name)
             
             local subLayout = Instance.new("UIListLayout")
             subLayout.FillDirection = Enum.FillDirection.Horizontal
+            subLayout.SortOrder = Enum.SortOrder.LayoutOrder
             subLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
             subLayout.VerticalAlignment = Enum.VerticalAlignment.Center
             subLayout.Padding = UDim.new(0, 8)
@@ -1288,10 +1299,12 @@ function Perplexity:CreateTab(name)
             parent = parent or section.Frame
             local slider = {Value = default or min}
             
+            section.ElementCount = section.ElementCount + 1
             local sliderFrame = Instance.new("Frame")
             sliderFrame.Size = UDim2.new(1, 0, 0, 42) 
             sliderFrame.BackgroundTransparency = 1
             sliderFrame.ZIndex = 2
+            sliderFrame.LayoutOrder = section.ElementCount
             sliderFrame.Parent = parent
             
             local title = Instance.new("TextLabel")
@@ -1403,10 +1416,12 @@ function Perplexity:CreateTab(name)
             parent = parent or section.Frame
             local dropdown = {Selected = default or list[1], Open = false}
             
+            section.ElementCount = section.ElementCount + 1
             local dropFrame = Instance.new("Frame")
             dropFrame.Size = UDim2.new(1, 0, 0, 44) 
             dropFrame.BackgroundTransparency = 1
             dropFrame.ZIndex = 2
+            dropFrame.LayoutOrder = section.ElementCount
             dropFrame.Parent = parent
             
             local title = Instance.new("TextLabel")
@@ -1459,6 +1474,7 @@ function Perplexity:CreateTab(name)
             container.Parent = dropFrame
             
             local dropLayout = Instance.new("UIListLayout")
+            dropLayout.SortOrder = Enum.SortOrder.LayoutOrder
             dropLayout.Parent = container
             
             local targetHeight = #list * 20
@@ -1472,7 +1488,7 @@ function Perplexity:CreateTab(name)
                 end)
             end
             
-            for _, item in ipairs(list) do
+            for index, item in ipairs(list) do
                 local itemBtn = Instance.new("TextButton")
                 itemBtn.Size = UDim2.new(1, 0, 0, 20)
                 itemBtn.BackgroundTransparency = 1
@@ -1482,6 +1498,7 @@ function Perplexity:CreateTab(name)
                 itemBtn.TextSize = 10
                 itemBtn.AutoButtonColor = false
                 itemBtn.TextXAlignment = Enum.TextXAlignment.Left
+                itemBtn.LayoutOrder = index
                 itemBtn.ZIndex = 51
                 ApplyFont(itemBtn, 10)
                 itemBtn.Parent = container
@@ -1549,10 +1566,12 @@ function Perplexity:CreateTab(name)
             parent = parent or section.Frame
             local keybind = {Key = default or "None", Binding = false}
             
+            section.ElementCount = section.ElementCount + 1
             local kbFrame = Instance.new("Frame")
             kbFrame.Size = UDim2.new(1, 0, 0, 24) 
             kbFrame.BackgroundTransparency = 1
             kbFrame.ZIndex = 2
+            kbFrame.LayoutOrder = section.ElementCount
             kbFrame.Parent = parent
             
             local label = Instance.new("TextLabel")
