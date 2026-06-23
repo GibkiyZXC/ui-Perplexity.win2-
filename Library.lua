@@ -1879,4 +1879,3 @@ function Perplexity:LoadConfig(slotName)
 end
 
 return Perplexity
-```
