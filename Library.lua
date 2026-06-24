@@ -54,16 +54,50 @@ local THEME = {
     Outline = Color3.fromRGB(48, 50, 64)
 }
 
--- [[ РЕЕСТР ВСТРОЕННЫХ ТЕМ (PRESETS) ]]
-local PRESETS = {
-    ["Red (Default)"] = Color3.fromRGB(255, 30, 60),
-    ["Green (Matrix)"] = Color3.fromRGB(0, 255, 120),
-    ["Blue (Cyber)"] = Color3.fromRGB(30, 144, 255),
-    ["Purple (Amethyst)"] = Color3.fromRGB(155, 89, 182),
-    ["Yellow (Gold)"] = Color3.fromRGB(241, 196, 15),
-    ["Orange (Fire)"] = Color3.fromRGB(230, 126, 34),
-    ["White (Snow)"] = Color3.fromRGB(236, 240, 241)
+-- [[ ДЕТАЛЬНАЯ КОНФИГУРАЦИЯ СИМВОЛОВ И ШРИФТОВ ДЛЯ КАЖДОЙ ТЕМЫ ]]
+local PRESETS_DATA = {
+    ["Red (Default)"] = {
+        Color = Color3.fromRGB(255, 30, 60),
+        Symbols = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"},
+        Font = Enum.Font.RobotoMono
+    },
+    ["Green (Matrix)"] = {
+        Color = Color3.fromRGB(0, 255, 120),
+        Symbols = {"ｦ", "ｱ", "ｳ", "ｴ", "ｵ", "ｷ", "ｹ", "ﾒ", "ｻ", "ｽ", "ﾀ", "ﾂ", "0", "1"},
+        Font = Enum.Font.RobotoMono
+    },
+    ["Blue (Cyber)"] = {
+        Color = Color3.fromRGB(30, 144, 255),
+        Symbols = {"0", "1", "A", "B", "C", "D", "E", "F", "X", "Y"},
+        Font = Enum.Font.RobotoMono
+    },
+    ["Purple (Amethyst)"] = {
+        Color = Color3.fromRGB(155, 89, 182),
+        Symbols = {"★", "✦", "✧", "✶"},
+        Font = Enum.Font.GothamBold
+    },
+    ["Yellow (Gold)"] = {
+        Color = Color3.fromRGB(241, 196, 15),
+        Symbols = {"$", "✦", "★"},
+        Font = Enum.Font.GothamBold
+    },
+    ["Orange (Fire)"] = {
+        Color = Color3.fromRGB(230, 126, 34),
+        Symbols = {"▲", "✦", "•"},
+        Font = Enum.Font.GothamMedium
+    },
+    ["White (Snow)"] = {
+        Color = Color3.fromRGB(236, 240, 241),
+        Symbols = {"❄", "❅", "❆", "•", "·"}, -- Уникальные снежинки и снежные точки
+        Font = Enum.Font.Arial
+    }
 }
+
+-- [[ РЕЕСТР ВСТРОЕННЫХ ТЕМ (PRESETS) ]]
+local PRESETS = {}
+for name, data in pairs(PRESETS_DATA) do
+    PRESETS[name] = data.Color
+end
 
 local MenuBlur = Lighting:FindFirstChild("Perplexity_Blur")
 if not MenuBlur then
@@ -343,10 +377,13 @@ local function SetupMenuBackgroundParticles(parent)
     for i = 1, 24 do
         local p = Instance.new("TextLabel")
         p.BackgroundTransparency = 1
-        p.Text = tostring(math.random(0, 9)) 
+        
+        -- Получаем дефолтные символы из экземпляра окна, если они существуют
+        local symbols = (Window and Window.ParticleSymbols) or {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+        p.Text = symbols[math.random(1, #symbols)]
         p.TextColor3 = activeParticleColors[math.random(1, #activeParticleColors)]
         p.TextTransparency = math.random(40, 75) / 100
-        p.Font = Enum.Font.RobotoMono 
+        p.Font = (Window and Window.ParticleFont) or Enum.Font.RobotoMono
         p.TextSize = math.random(9, 13)
         p.Position = UDim2.new(math.random(), 0, math.random(), 0)
         p.ZIndex = 1
@@ -370,7 +407,8 @@ local function SetupMenuBackgroundParticles(parent)
                 local newY = pos.Y.Scale + p.Speed * (dt * 60)
                 
                 if math.random() < 0.05 then
-                    p.Obj.Text = tostring(math.random(0, 9))
+                    local symbols = (Window and Window.ParticleSymbols) or {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+                    p.Obj.Text = symbols[math.random(1, #symbols)]
                 end
                 
                 if newY > 1 then
@@ -581,6 +619,9 @@ Perplexity.Presets = PRESETS
 function Perplexity.new()
     local self = setmetatable({}, Perplexity)
     Window = self 
+    
+    self.ParticleSymbols = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+    self.ParticleFont = Enum.Font.RobotoMono
     
     -- [[ ОРИГИНАЛЬНЫЙ РАЗМЕР ГЛАВНОГО ОКНА (840 x 560) ]]
     self.MainFrame = Instance.new("Frame")
@@ -1515,7 +1556,7 @@ function Perplexity:CreateTab(name)
             return section:CreateSliderInternal(name, min, max, default, callback, section.Frame)
         end
         
-        -- [[ УМЕНЬШЕННЫЙ ВЫПАДАЮЩИЙ СПИСОК ]]
+        -- [[ УМЕНЬШЕННЫЙ ВЫПАДАЮЩИЙ СПИСОК (Высота 36 px) ]]
         function section:CreateDropdownInternal(name, list, default, callback, parent)
             parent = parent or section.Frame
             local dropdown = {Selected = default or list[1], Open = false}
@@ -1879,8 +1920,36 @@ function Perplexity:SetBlurEnabled(state)
 end
 
 function Perplexity:SetThemeColor(color)
+    -- Для кастомной настройки оставляем стандартные цифры, генерируя гармоничные оттенки
+    self.ParticleSymbols = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+    self.ParticleFont = Enum.Font.RobotoMono
+    
     local particles = GetParticleColorsForAccent(color)
     UpdateBackgroundTheme(color, particles)
+    
+    for _, p in ipairs(allParticles) do
+        p.Obj.Font = self.ParticleFont
+        p.Obj.Text = self.ParticleSymbols[math.random(1, #self.ParticleSymbols)]
+    end
+end
+
+-- Мощный механизм смены пресетов: меняет цвета, шрифты и символы падающих частиц
+function Perplexity:SetThemePreset(presetName)
+    local presetData = PRESETS_DATA[presetName]
+    if presetData then
+        self.ParticleSymbols = presetData.Symbols
+        self.ParticleFont = presetData.Font
+        
+        local color = presetData.Color
+        local particles = GetParticleColorsForAccent(color)
+        UpdateBackgroundTheme(color, particles)
+        
+        -- Перекрашиваем и заменяем символы на лету
+        for _, p in ipairs(allParticles) do
+            p.Obj.Font = presetData.Font
+            p.Obj.Text = presetData.Symbols[math.random(1, #presetData.Symbols)]
+        end
+    end
 end
 
 function Perplexity:UpdateTheme(accentColor, particleColors)
