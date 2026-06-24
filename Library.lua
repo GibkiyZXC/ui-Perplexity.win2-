@@ -34,7 +34,7 @@ ScreenGui.Name = "Perplexity_UI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true 
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.DisplayOrder = 100 -- Гарантирует, что меню всегда отрисовывается ПОВЕРХ любого ESP
+ScreenGui.DisplayOrder = 100 -- Меню всегда отрисовывается поверх ESP
 
 local success, err = pcall(function()
     ScreenGui.Parent = CoreGui
@@ -97,6 +97,15 @@ local activeParticleColors = {
     Color3.fromRGB(100, 10, 25),  
     Color3.fromRGB(25, 25, 30)    
 }
+
+-- Генератор гармоничной палитры частиц под любой выбранный цвет темы
+local function GetParticleColorsForAccent(accent)
+    local h, s, v = accent:ToHSV()
+    local color1 = accent
+    local color2 = Color3.fromHSV(h, s, v * 0.4)
+    local color3 = Color3.fromRGB(25, 25, 30)
+    return {color1, color2, color3}
+end
 
 local Flags = {}
 local SaveFlags = {}
@@ -367,6 +376,8 @@ local function SetupMenuBackgroundParticles(parent)
                 if newY > 1 then
                     newY = -0.05
                     p.Obj.Position = UDim2.new(math.random(), 0, newY, 0)
+                    -- При обновлении позиции берем случайный цвет из текущей темы
+                    p.Obj.TextColor3 = activeParticleColors[math.random(1, #activeParticleColors)]
                 else
                     p.Obj.Position = UDim2.new(pos.X.Scale, 0, newY, 0)
                 end
@@ -1070,7 +1081,7 @@ function Perplexity:CreateTab(name)
             return section:CreateButtonInternal(name, callback, section.Frame)
         end
         
-        -- [[ КОМПАКТИЗИРОВАННЫЙ СЕЙВ-ЭЛЕМЕНТ ЧЕКБОКСА (Высота 20 px) ]]
+        -- [[ КОМПАКТИЗИРОВАННЫЙ ЧЕКБОКС (Высота 20 px) ]]
         function section:CreateCheckboxInternal(name, default, callback, parent)
             parent = parent or section.Frame
             local checkbox = {State = default or false}
@@ -1385,7 +1396,7 @@ function Perplexity:CreateTab(name)
             return section:CreateCheckboxInternal(name, default, callback, section.Frame)
         end
         
-        -- [[ КОМПАКТИЗИРОВАННЫЙ СЛАЙДЕР (Высота 34 px) ]]
+        -- [[ УМЕНЬШЕННЫЙ СЛАЙДЕР (Высота 34 px) ]]
         function section:CreateSliderInternal(name, min, max, default, callback, parent)
             parent = parent or section.Frame
             local slider = {Value = default or min}
@@ -1504,7 +1515,7 @@ function Perplexity:CreateTab(name)
             return section:CreateSliderInternal(name, min, max, default, callback, section.Frame)
         end
         
-        -- [[ КОМПАКТИЗИРОВАННЫЙ ВЫПАДАЮЩИЙ СПИСОК (Высота 36 px) ]]
+        -- [[ УМЕНЬШЕННЫЙ ВЫПАДАЮЩИЙ СПИСОК ]]
         function section:CreateDropdownInternal(name, list, default, callback, parent)
             parent = parent or section.Frame
             local dropdown = {Selected = default or list[1], Open = false}
@@ -1655,7 +1666,7 @@ function Perplexity:CreateTab(name)
             return section:CreateDropdownInternal(name, list, default, callback, section.Frame)
         end
         
-        -- [[ КОМПАКТИЗИРОВАННЫЙ БИНД КЛАВИШИ (Высота 20 px) ]]
+        -- [[ УМЕНЬШЕННЫЙ БИНД КЛАВИШИ (Высота 20 px) ]]
         function section:CreateKeybindInternal(name, default, callback, parent)
             parent = parent or section.Frame
             local keybind = {Key = default or "None", Binding = false}
@@ -1802,12 +1813,9 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
         TitleTextLabel.TextColor3 = accentColor
     end
     
+    -- Моментальная смена цвета у всех запущенных частиц в цикле
     for _, p in ipairs(allParticles) do
-        if p.Obj:IsA("TextLabel") then
-            p.Obj.TextColor3 = particleColors[math.random(1, #particleColors)]
-        elseif p.Obj:IsA("ImageLabel") then
-            p.Obj.ImageColor3 = particleColors[math.random(1, #particleColors)]
-        end
+        p.Obj.TextColor3 = particleColors[math.random(1, #particleColors)]
     end
     
     for _, glow in ipairs(allHoverGlows) do
@@ -1871,11 +1879,8 @@ function Perplexity:SetBlurEnabled(state)
 end
 
 function Perplexity:SetThemeColor(color)
-    UpdateBackgroundTheme(color, {
-        color,
-        Color3.fromRGB(color.R * 255 * 0.4, color.G * 255 * 0.4, color.B * 255 * 0.4),
-        Color3.fromRGB(25, 25, 30)
-    })
+    local particles = GetParticleColorsForAccent(color)
+    UpdateBackgroundTheme(color, particles)
 end
 
 function Perplexity:UpdateTheme(accentColor, particleColors)
