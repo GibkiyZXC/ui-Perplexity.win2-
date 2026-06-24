@@ -1,6 +1,6 @@
 -- =============================================================================
 -- [[ PERPLEXITY.WIN - OPEN-SOURCE HIGH-FIDELITY UI FRAMEWORK ]]
--- [[ Reactive & Dense Layout Edition - Spacious 835px Width Version ]]
+-- [[ Reactive & Dense Layout Edition - Spacious 835px Width (210px Sidebar) ]]
 -- =============================================================================
 
 if getgenv().Perplexity then
@@ -578,12 +578,12 @@ Perplexity.Presets = {
     ["White (Snow)"] = Color3.fromRGB(236, 240, 241)
 }
 
-function Perplexity.new()
+function Perplexity.new(titleText)
     local self = setmetatable({}, Perplexity)
     Window = self 
     
     self.MainFrame = Instance.new("Frame")
-    self.MainFrame.Size = UDim2.new(0, 835, 0, 520) -- Установлено: 835 x 520
+    self.MainFrame.Size = UDim2.new(0, 835, 0, 520)
     self.MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     self.MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     self.MainFrame.BackgroundTransparency = 1
@@ -601,7 +601,7 @@ function Perplexity.new()
     SetupMenuBackgroundParticles(self.MainFrame)
     
     local Sidebar = Instance.new("Frame")
-    Sidebar.Size = UDim2.new(0, 170, 1, -20) -- Ширина сайдбара пропорционально расширена до 170px
+    Sidebar.Size = UDim2.new(0, 210, 1, -20) -- Боковая часть расширена до 210px
     Sidebar.Position = UDim2.new(0, 10, 0, 10)
     Sidebar.BackgroundColor3 = THEME.SidebarBg
     Sidebar.BackgroundTransparency = 0.12
@@ -620,7 +620,7 @@ function Perplexity.new()
     TitleText.Size = UDim2.new(1, -20, 1, 0)
     TitleText.Position = UDim2.new(0, 15, 0, 0)
     TitleText.BackgroundTransparency = 1
-    TitleText.Text = "PERPLEXITY.WIN"
+    TitleText.Text = titleText or "PERPLEXITY.WIN"
     TitleText.TextColor3 = THEME.Accent
     TitleText.Font = Enum.Font.GothamBold
     TitleText.TextSize = 12
@@ -675,8 +675,8 @@ function Perplexity.new()
     tabLayout.Parent = self.TabButtonContainer
     
     self.ContentArea = Instance.new("Frame")
-    self.ContentArea.Size = UDim2.new(1, -200, 1, -20) -- Сдвинуто под ширину сайдбара
-    self.ContentArea.Position = UDim2.new(0, 190, 0, 10)
+    self.ContentArea.Size = UDim2.new(1, -240, 1, -20) -- Сдвинуто и скорректировано под 210px сайдбара
+    self.ContentArea.Position = UDim2.new(0, 230, 0, 10)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ZIndex = 2
     self.ContentArea.Parent = self.MainFrame
@@ -1155,7 +1155,7 @@ function Perplexity:CreateTab(name)
             
             local function updateLayout()
                 local subWidth = subElements.AbsoluteSize.X
-                local paddingOffset = (subWidth > 0) and (subWidth + 6) or 0
+                local paddingOffset = (subWidth > 0) wildlife and (subWidth + 6) or 0
                 clickContainer.Size = UDim2.new(1, -paddingOffset, 1, 0)
             end
             subElements:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout)
@@ -1365,7 +1365,6 @@ function Perplexity:CreateTab(name)
             return section:CreateCheckboxInternal(name, default, callback, section.Frame)
         end
         
-        -- [[ СПАТИОЗНЫЙ ИНЛАЙН СЛАЙДЕР (ВЫСОТА 34PX, ШИРИНА СЛАЙДЕРА СКОРРЕКТИРОВАНА ПОД 135PX) ]]
         function section:CreateSliderInternal(name, min, max, default, callback, parent)
             parent = parent or section.Frame
             local slider = {Value = default or min}
@@ -1404,7 +1403,7 @@ function Perplexity:CreateTab(name)
             valueDisplay.Parent = sliderFrame
             
             local barBg = Instance.new("Frame")
-            barBg.Size = UDim2.new(1, 0, 0, 3) -- Толщина 3px
+            barBg.Size = UDim2.new(1, 0, 0, 3)
             barBg.Position = UDim2.new(0, 0, 0, 22) 
             barBg.BackgroundColor3 = Color3.fromRGB(34, 34, 46) 
             barBg.ZIndex = 2
@@ -1421,7 +1420,7 @@ function Perplexity:CreateTab(name)
             
             local knob = Instance.new("Frame")
             knob.AnchorPoint = Vector2.new(0.5, 0.5)
-            knob.Size = UDim2.new(0, 8, 0, 8) -- Диаметр 8px
+            knob.Size = UDim2.new(0, 8, 0, 8)
             knob.Position = UDim2.new(initPct, 0, 0.5, 0)
             knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             knob.ZIndex = 3
@@ -1484,21 +1483,20 @@ function Perplexity:CreateTab(name)
             return section:CreateSliderInternal(name, min, max, default, callback, section.Frame)
         end
         
-        -- [[ СПАТИОЗНЫЙ ИНЛАЙН ДРОПДАУН (СЛОЖЕННЫЙ 36PX, ШИРИНА КНОПКИ СКОРРЕКТИРОВАНА ПОД 135PX) ]]
         function section:CreateDropdownInternal(name, list, default, callback, parent)
             parent = parent or section.Frame
             local dropdown = {Selected = default or list[1], Open = false}
             
             section.ElementCount = section.ElementCount + 1
             local dropFrame = Instance.new("Frame")
-            dropFrame.Size = UDim2.new(1, 0, 0, 36) -- Сложенный 36px
+            dropFrame.Size = UDim2.new(1, 0, 0, 36)
             dropFrame.BackgroundTransparency = 1
             dropFrame.ZIndex = 2
             dropFrame.LayoutOrder = section.ElementCount
             dropFrame.Parent = parent
             
             local title = Instance.new("TextLabel")
-            title.Size = UDim2.new(1, -145, 1, 0) -- Большой задел под текст слева
+            title.Size = UDim2.new(1, -145, 1, 0)
             title.Position = UDim2.new(0, 0, 0, 0)
             title.BackgroundTransparency = 1
             title.Text = name
@@ -1510,7 +1508,7 @@ function Perplexity:CreateTab(name)
             title.Parent = dropFrame
             
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0, 135, 0, 18) -- Кнопка выбора: 135px шириной
+            btn.Size = UDim2.new(0, 135, 0, 18)
             btn.Position = UDim2.new(1, -135, 0.5, -9)
             btn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
             btn.Text = "  " .. dropdown.Selected
@@ -1538,7 +1536,7 @@ function Perplexity:CreateTab(name)
             arrow.Parent = btn
             
             local container = Instance.new("Frame")
-            container.Size = UDim2.new(0, 135, 0, 0) -- Ширина опций 135px
+            container.Size = UDim2.new(0, 135, 0, 0)
             container.Position = UDim2.new(1, -135, 0, 22)
             container.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
             container.ZIndex = 50
@@ -1552,7 +1550,7 @@ function Perplexity:CreateTab(name)
             dropLayout.SortOrder = Enum.SortOrder.LayoutOrder
             dropLayout.Parent = container
             
-            local targetHeight = #list * 16 -- Опции списка: 16px
+            local targetHeight = #list * 16
             
             local function selectValue(item)
                 dropdown.Selected = item
@@ -1565,7 +1563,7 @@ function Perplexity:CreateTab(name)
             
             for index, item in ipairs(list) do
                 local itemBtn = Instance.new("TextButton")
-                itemBtn.Size = UDim2.new(1, 0, 0, 16) -- Высота 16px
+                itemBtn.Size = UDim2.new(1, 0, 0, 16)
                 itemBtn.BackgroundTransparency = 1
                 itemBtn.Text = "  " .. item
                 itemBtn.TextColor3 = THEME.TextMuted
@@ -1874,67 +1872,13 @@ function Perplexity:LoadConfig(slotName)
     LoadConfig(slotName)
 end
 
-function Perplexity:CreateSettingsTab()
-    local SettingsTab = self:CreateTab("Settings")
-
-    local ConfigSection = SettingsTab:CreateSection("Configuration Manager", 1)
-    local selectedSlot = "Slot 1"
-
-    ConfigSection:CreateDropdown("Selected Slot", {"Slot 1", "Slot 2", "Slot 3", "Legit", "Rage"}, "Slot 1", function(selected)
-        selectedSlot = selected
-    end)
-
-    ConfigSection:CreateButton("Save Configuration", function()
-        self:SaveConfig(selectedSlot)
-    end)
-
-    ConfigSection:CreateButton("Load Configuration", function()
-        self:LoadConfig(selectedSlot)
-    end)
-
-    local MenuSettings = SettingsTab:CreateSection("Menu Settings", 2)
-
-    MenuSettings:CreateKeybind("Hide / Show Key", toggleKey.Name, function(key)
-        if typeof(key) == "EnumItem" then
-            toggleKey = key
-        end
-    end)
-
-    local themeList = {}
-    for themeName, _ in pairs(Perplexity.Presets) do
-        table.insert(themeList, themeName)
-    end
-    table.sort(themeList)
-
-    MenuSettings:CreateDropdown("Theme Preset", themeList, "Red (Default)", function(selectedName)
-        local selectedColor = Perplexity.Presets[selectedName]
-        if selectedColor then
-            self:UpdateTheme(selectedColor, {
-                selectedColor,
-                Color3.fromRGB(selectedColor.R * 255 * 0.4, selectedColor.G * 255 * 0.4, selectedColor.B * 255 * 0.4),
-                Color3.fromRGB(25, 25, 30)
-            })
-        end
-    end)
-
-    local CustomThemeColor = MenuSettings:CreateCheckbox("Custom Color Accent", false, function() end)
-    CustomThemeColor:CreateColorpicker(Color3.fromRGB(255, 30, 60), function(color)
-        self:UpdateTheme(color, {
-            color, 
-            Color3.fromRGB(color.R * 255 * 0.4, color.G * 255 * 0.4, color.B * 255 * 0.4),
-            Color3.fromRGB(25, 25, 30)
-        })
-    end)
-    
-    return SettingsTab
-end
-
 UserInputService.InputBegan:Connect(function(input, processed)
-    if input.KeyCode == toggleKey then
-        if UserInputService:GetFocusedTextBox() then
-            return
-        end
-        Window:Toggle(not menuVisible)
+    if UserInputService:GetFocusedTextBox() then return end
+    
+    local currentKey = getgenv().toggleKey or Enum.KeyCode.RightShift
+    if input.KeyCode == currentKey then
+        menuVisible = not menuVisible
+        Window:Toggle(menuVisible)
     end
 end)
 
