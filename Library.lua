@@ -228,85 +228,6 @@ NotifLayout.SortOrder = Enum.SortOrder.LayoutOrder
 NotifLayout.Padding = UDim.new(0, 8)
 NotifLayout.Parent = NotificationContainer
 
-local function Notify(title, message, duration)
-    duration = duration or 3
-    local notif = Instance.new("Frame")
-    notif.Size = UDim2.new(1, 0, 0, 46)
-    notif.Position = UDim2.new(1.2, 0, 0, 0)
-    notif.BackgroundColor3 = THEME.SectionBg
-    notif.BackgroundTransparency = 0.1
-    notif.ClipsDescendants = true
-    notif.Name = "NotificationFrame"
-    AddCorner(notif, 4)
-    AddDoubleStroke(notif)
-    
-    local accentBar = Instance.new("Frame")
-    accentBar.Name = "AccentBar"
-    accentBar.Size = UDim2.new(0, 3, 1, 0)
-    accentBar.Position = UDim2.new(0, 0, 0, 0)
-    accentBar.BackgroundColor3 = THEME.Accent
-    accentBar.BorderSizePixel = 0
-    accentBar.ZIndex = 2
-    accentBar.Parent = notif
-    AddCorner(accentBar, 2)
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(1, -20, 0, 16)
-    titleLabel.Position = UDim2.new(0, 10, 0, 4)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.TextColor3 = THEME.Accent
-    titleLabel.Text = title:upper()
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    ApplyFont(titleLabel, 9)
-    AddTextStroke(titleLabel)
-    titleLabel.Parent = notif
-    
-    local msgLabel = Instance.new("TextLabel")
-    msgLabel.Name = "MsgLabel"
-    msgLabel.Size = UDim2.new(1, -20, 0, 22)
-    msgLabel.Position = UDim2.new(0, 10, 0, 18)
-    msgLabel.BackgroundTransparency = 1
-    msgLabel.TextColor3 = THEME.Text
-    msgLabel.Text = message
-    msgLabel.TextWrapped = true
-    msgLabel.TextXAlignment = Enum.TextXAlignment.Left
-    ApplyFont(msgLabel, 9)
-    AddTextStroke(msgLabel)
-    msgLabel.Parent = notif
-    
-    notif.Parent = NotificationContainer
-    
-    Tween(notif, 0.3, {Position = UDim2.new(0, 0, 0, 0)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-    
-    task.delay(duration, function()
-        pcall(function()
-            local t = Tween(notif, 0.25, {Position = UDim2.new(1.2, 0, 0, 0)}, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-            t.Completed:Connect(function()
-                notif:Destroy()
-            end)
-        end)
-    end)
-end
-
-local mouse = nil
-pcall(function()
-    mouse = LocalPlayer:GetMouse()
-end)
-while not mouse do
-    task.wait(0.1)
-    pcall(function()
-        mouse = LocalPlayer:GetMouse()
-    end)
-end
-
-pcall(function()
-    UserInputService.MouseIconEnabled = true
-    if mouse then
-        mouse.Icon = "rbxassetid://76631660114196"
-    end
-end)
-
 local function SetupMenuBackgroundParticles(parent)
     local particleContainer = Instance.new("Frame")
     particleContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -1155,7 +1076,7 @@ function Perplexity:CreateTab(name)
             
             local function updateLayout()
                 local subWidth = subElements.AbsoluteSize.X
-                local paddingOffset = (subWidth > 0) wildlife and (subWidth + 6) or 0
+                local paddingOffset = (subWidth > 0) and (subWidth + 6) or 0
                 clickContainer.Size = UDim2.new(1, -paddingOffset, 1, 0)
             end
             subElements:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout)
