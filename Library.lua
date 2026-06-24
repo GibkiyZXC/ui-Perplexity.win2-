@@ -1,6 +1,6 @@
 -- =============================================================================
 -- [[ PERPLEXITY.WIN - OPEN-SOURCE HIGH-FIDELITY UI FRAMEWORK ]]
--- [[ Reactive & Perfect Layout Edition with Robust Config & Smart Popups ]]
+-- [[ Reactive, Perfect Layout & Matrix-Coding Rain Edition ]]
 -- =============================================================================
 
 if getgenv().Perplexity then
@@ -63,7 +63,7 @@ if not MenuBlur then
 end
 
 local optBlurEnabled = true
-local optSnowEnabled = true
+local optSnowEnabled = true -- Управляет фоновым цифровым дождем
 local toggleKey = Enum.KeyCode.RightShift 
 
 local allParticles = {}
@@ -228,7 +228,7 @@ NotifLayout.SortOrder = Enum.SortOrder.LayoutOrder
 NotifLayout.Padding = UDim.new(0, 10)
 NotifLayout.Parent = NotificationContainer
 
--- [[ УЛУЧШЕННЫЕ УВЕДОМЛЕНИЯ С ПЛАВНЫМ ВЫДВИЖЕНИЕМ (SLIDE-IN) И ТЕМАТИЧЕСКОЙ ПОЛОСОЙ ]]
+-- [[ УЛУЧШЕННЫЕ УВЕДОМЛЕНИЯ С ПЛАВНЫМ ВЫДВИЖЕНИЕМ (SLIDE-IN) И ТЕМАТИЧЕСКОЙ ПОЛОСОЙ НА АНГЛИЙСКОМ ]]
 local function Notify(title, message, duration)
     duration = duration or 3
     
@@ -240,7 +240,7 @@ local function Notify(title, message, duration)
     
     local innerNotif = Instance.new("Frame")
     innerNotif.Size = UDim2.new(1, -10, 1, 0)
-    innerNotif.Position = UDim2.new(1.3, 0, 0, 0) -- Начинается за пределами экрана справа
+    innerNotif.Position = UDim2.new(1.3, 0, 0, 0) 
     innerNotif.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
     innerNotif.BackgroundTransparency = 0.08
     innerNotif.ClipsDescendants = true
@@ -278,7 +278,6 @@ local function Notify(title, message, duration)
     AddTextStroke(msgLabel)
     msgLabel.Parent = innerNotif
     
-    -- Анимация входа
     Tween(notif, 0.25, {Size = UDim2.new(1, 0, 0, 50)}, Enum.EasingStyle.Quart)
     Tween(innerNotif, 0.35, {Position = UDim2.new(0, 0, 0, 0)}, Enum.EasingStyle.Quart)
     
@@ -312,6 +311,7 @@ pcall(function()
     end
 end)
 
+-- [[ ТЕМА "ЦИФРОВОГО ДОЖДЯ" (CODE RAIN / MATRIX EFFECT) С БЕГУЩИМИ СИМВОЛАМИ ]]
 local function SetupMenuBackgroundParticles(parent)
     local particleContainer = Instance.new("Frame")
     particleContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -321,22 +321,22 @@ local function SetupMenuBackgroundParticles(parent)
     particleContainer.Parent = parent
     
     local particles = {}
-    for i = 1, 22 do
-        local p = Instance.new("ImageLabel")
-        local size = math.random(15, 30)
-        p.Size = UDim2.new(0, size, 0, size)
-        p.Image = "rbxassetid://10822615828"
-        p.ImageColor3 = activeParticleColors[math.random(1, #activeParticleColors)]
-        p.ImageTransparency = math.random(45, 55) / 100
+    for i = 1, 28 do
+        local p = Instance.new("TextLabel")
         p.BackgroundTransparency = 1
+        p.Text = tostring(math.random(0, 9)) 
+        p.TextColor3 = activeParticleColors[math.random(1, #activeParticleColors)]
+        p.TextTransparency = math.random(40, 75) / 100
+        p.Font = Enum.Font.RobotoMono -- Хакерский моноширинный шрифт
+        p.TextSize = math.random(10, 15)
         p.Position = UDim2.new(math.random(), 0, math.random(), 0)
         p.ZIndex = 1
         p.Parent = particleContainer
         
         local item = {
             Obj = p,
-            Speed = math.random(4, 12) / 1000,
-            Wind = math.random(-3, 3) / 1000
+            Speed = math.random(7, 18) / 1000,
+            Wind = 0
         }
         
         table.insert(particles, item)
@@ -349,16 +349,18 @@ local function SetupMenuBackgroundParticles(parent)
             for _, p in ipairs(particles) do
                 local pos = p.Obj.Position
                 local newY = pos.Y.Scale + p.Speed * (dt * 60)
-                local newX = pos.X.Scale + p.Wind * (dt * 60)
+                
+                -- Динамическая смена цифр на лету для анимации бегущего кода
+                if math.random() < 0.05 then
+                    p.Obj.Text = tostring(math.random(0, 9))
+                end
                 
                 if newY > 1 then
                     newY = -0.05
-                    newX = math.random()
+                    p.Obj.Position = UDim2.new(math.random(), 0, newY, 0)
+                else
+                    p.Obj.Position = UDim2.new(pos.X.Scale, 0, newY, 0)
                 end
-                if newX > 1 or newX < 0 then
-                    newX = math.random()
-                end
-                p.Obj.Position = UDim2.new(newX, 0, newY, 0)
             end
         else
             particleContainer.Visible = false
@@ -596,7 +598,7 @@ function Perplexity.new()
     TitleText.Size = UDim2.new(1, -20, 1, 0)
     TitleText.Position = UDim2.new(0, 15, 0, 0)
     TitleText.BackgroundTransparency = 1
-    -- [[ УДАЛЕН ЛИШНИЙ ПРОБЕЛ ПЕРЕД .WIN ]]
+    -- [[ УДАЛЕН ПРОБЕЛ МЕЖДУ НАЗВАНИЕМ И ТОЧКОЙ ]]
     TitleText.Text = "PERPLEXITY<font color='rgb(255,255,255)'>.WIN</font>"
     TitleText.RichText = true
     TitleText.TextColor3 = THEME.Accent
@@ -1318,8 +1320,8 @@ function Perplexity:CreateTab(name)
                         local menuY = Window.MainFrame.AbsolutePosition.Y
                         local menuWidth = Window.MainFrame.AbsoluteSize.X
                         
-                        local targetX = menuX - 145 -- Позиционируем слева от основного меню
-                        if targetX < 10 then -- Если выходит за край экрана слева, прижимаем вправо
+                        local targetX = menuX - 145 
+                        if targetX < 10 then 
                             targetX = menuX + menuWidth + 5
                         end
                         
@@ -1784,8 +1786,13 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
         TitleTextLabel.TextColor3 = accentColor
     end
     
+    -- [[ ПОДДЕРЖКА СМЕНЫ ЦВЕТА СИМВОЛОВ ЦИФРОВОГО ДОЖДЯ НА ЛЕТУ ]]
     for _, p in ipairs(allParticles) do
-        p.Obj.ImageColor3 = particleColors[math.random(1, #particleColors)]
+        if p.Obj:IsA("TextLabel") then
+            p.Obj.TextColor3 = particleColors[math.random(1, #particleColors)]
+        elseif p.Obj:IsA("ImageLabel") then
+            p.Obj.ImageColor3 = particleColors[math.random(1, #particleColors)]
+        end
     end
     
     for _, glow in ipairs(allHoverGlows) do
