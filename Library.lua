@@ -132,12 +132,12 @@ local activeParticleColors = {
     Color3.fromRGB(25, 25, 30)    
 }
 
--- Генератор гармоничной палитры частиц под любой выбранный цвет темы
+-- Генератор гармоничной палитры частиц под любой выбранный цвет темы (без темных слепых зон)
 local function GetParticleColorsForAccent(accent)
     local h, s, v = accent:ToHSV()
     local color1 = accent
-    local color2 = Color3.fromHSV(h, s, v * 0.4)
-    local color3 = Color3.fromRGB(25, 25, 30)
+    local color2 = Color3.fromHSV(h, s * 0.9, v * 0.7)
+    local color3 = Color3.fromHSV(h, s * 0.7, v * 0.4)
     return {color1, color2, color3}
 end
 
@@ -629,8 +629,11 @@ function Perplexity.new()
     self.MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     self.MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     self.MainFrame.BackgroundTransparency = 1
-    self.MainFrame.ClipsDescendants = true
+    self.MainFrame.ClipsDescendants = false -- Чтобы палитра могла выходить за рамки MainFrame
     self.MainFrame.Parent = ScreenGui
+    
+    -- Переносим палитру внутрь MainFrame, чтобы она двигалась вместе с меню
+    ColorpickerWindow.Parent = self.MainFrame
     
     local BgFrame = Instance.new("Frame")
     BgFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -795,6 +798,7 @@ function Perplexity:CreateTab(name)
     AddTextStroke(tabLabel)
     ApplyFont(tabLabel, 11)
     tabLabel.Parent = tab.Button
+    tab.Label = tabLabel -- Сохраняем текстовый объект для динамической перекраски
     
     local hoverBg = Instance.new("Frame")
     hoverBg.Size = UDim2.new(1, 0, 1, 0)
@@ -1379,17 +1383,16 @@ function Perplexity:CreateTab(name)
                     activeColorpicker.S = s
                     activeColorpicker.V = v
                     
+                    -- Изменение позиционирования: теперь рассчитывается относительно MainFrame
                     if Window and Window.MainFrame then
                         local menuX = Window.MainFrame.AbsolutePosition.X
-                        local menuY = Window.MainFrame.AbsolutePosition.Y
-                        local menuWidth = Window.MainFrame.AbsoluteSize.X
-                        
-                        local targetX = menuX - 135 
-                        if targetX < 10 then 
-                            targetX = menuX + menuWidth + 5
+                        if menuX < 140 then 
+                            -- Меню слишком близко к левой стороне - открываем палитру справа
+                            ColorpickerWindow.Position = UDim2.new(1, 5, 0, 20)
+                        else
+                            -- По умолчанию палитра аккуратно стыкуется слева от меню
+                            ColorpickerWindow.Position = UDim2.new(0, -135, 0, 20)
                         end
-                        
-                        ColorpickerWindow.Position = UDim2.new(0, targetX, 0, menuY + 20)
                     else
                         ColorpickerWindow.Position = UDim2.new(0, cpBtn.AbsolutePosition.X - 140, 0, cpBtn.AbsolutePosition.Y)
                     end
@@ -1428,7 +1431,13 @@ function Perplexity:CreateTab(name)
                 end
             }
             
-            table.insert(allCheckboxes, {Indicator = indicator, Label = label, CheckboxObj = checkbox})
+            -- Сохраняем ссылки для динамической перекраски чекбокса
+            table.insert(allCheckboxes, {
+                Indicator = indicator, 
+                Stroke = indStroke, 
+                Label = label, 
+                CheckboxObj = checkbox
+            })
             SaveFlags[name] = checkbox.State
             table.insert(section.Elements, {Name = name, Frame = boxFrame})
             return checkbox
@@ -1842,6 +1851,11 @@ end
 -- [[ МЕТОД ДИНАМИЧЕСКОЙ СМЕНЫ АКЦЕНТОВ И ЧАСТИЦ ТЕМЫ ]]
 local function UpdateBackgroundTheme(accentColor, particleColors)
     THEME.Accent = accentColor
+    
+    -- Автоматическая генерация палитры частиц при ее отсутствии
+    if not particleColors then
+        particleColors = GetParticleColorsForAccent(accentColor)
+    end
     activeParticleColors = particleColors
     
     pcall(function()
@@ -1854,10 +1868,14 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
         TitleTextLabel.TextColor3 = accentColor
     end
     
-    -- Моментальная смена цвета у всех запущенных частиц в цикле
-    for _, p in ipairs(allParticles) do
-        p.Obj.TextColor3 = particleColors[math.random(1, #particleColors)]
-    end
+    -- Моментальная и безопасная смена цвета у всех запущенных частиц
+    pcall(function()
+        for _, p in ipairs(allParticles) do
+            if p.Obj and p.Obj.Parent then
+                p.Obj.TextColor3 = particleColors[math.random(1, #particleColors)]
+            end
+        end
+    end)
     
     for _, glow in ipairs(allHoverGlows) do
         glow.ImageColor3 = accentColor
@@ -1871,9 +1889,13 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
         end
     end
     
+    -- Обновляем индикаторы и обводки чекбоксов
     for _, cb in ipairs(allCheckboxes) do
         if cb.CheckboxObj.State then
             cb.Indicator.BackgroundColor3 = THEME.Accent
+            if cb.Stroke then
+                cb.Stroke.Color = THEME.Accent
+            end
         end
     end
     
@@ -1890,10 +1912,13 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
         arr.TextColor3 = THEME.Accent
     end
     
+    -- Перекрашиваем индикатор и активный заголовок вкладки
     for _, t in ipairs(allTabs) do
         t.Indicator.BackgroundColor3 = THEME.Accent
         if Window.ActiveTab == t then
-            t.Button.TextColor3 = THEME.Accent
+            if t.Label then
+                t.Label.TextColor3 = THEME.Accent
+            end
         end
     end
     
