@@ -1,6 +1,6 @@
 -- =============================================================================
 -- [[ PERPLEXITY.WIN - OPEN-SOURCE HIGH-FIDELITY UI FRAMEWORK ]]
--- [[ Reactive & Perfect Layout Edition with Robust Config System ]]
+-- [[ Reactive & Perfect Layout Edition with Robust Config & Smart Popups ]]
 -- =============================================================================
 
 if getgenv().Perplexity then
@@ -228,47 +228,66 @@ NotifLayout.SortOrder = Enum.SortOrder.LayoutOrder
 NotifLayout.Padding = UDim.new(0, 10)
 NotifLayout.Parent = NotificationContainer
 
+-- [[ УЛУЧШЕННЫЕ УВЕДОМЛЕНИЯ С ПЛАВНЫМ ВЫДВИЖЕНИЕМ (SLIDE-IN) И ТЕМАТИЧЕСКОЙ ПОЛОСОЙ ]]
 local function Notify(title, message, duration)
     duration = duration or 3
+    
     local notif = Instance.new("Frame")
     notif.Size = UDim2.new(1, 0, 0, 0)
-    notif.BackgroundColor3 = THEME.SectionBg
-    notif.BackgroundTransparency = 0.1
+    notif.BackgroundTransparency = 1
     notif.ClipsDescendants = true
-    AddCorner(notif, 6)
-    AddDoubleStroke(notif)
+    notif.Parent = NotificationContainer
+    
+    local innerNotif = Instance.new("Frame")
+    innerNotif.Size = UDim2.new(1, -10, 1, 0)
+    innerNotif.Position = UDim2.new(1.3, 0, 0, 0) -- Начинается за пределами экрана справа
+    innerNotif.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    innerNotif.BackgroundTransparency = 0.08
+    innerNotif.ClipsDescendants = true
+    AddCorner(innerNotif, 5)
+    AddDoubleStroke(innerNotif)
+    innerNotif.Parent = notif
+    
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 3, 1, 0)
+    accentBar.Position = UDim2.new(0, 0, 0, 0)
+    accentBar.BackgroundColor3 = THEME.Accent
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = innerNotif
     
     local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, -10, 0, 20)
-    titleLabel.Position = UDim2.new(0, 10, 0, 5)
+    titleLabel.Size = UDim2.new(1, -25, 0, 18)
+    titleLabel.Position = UDim2.new(0, 12, 0, 6)
     titleLabel.BackgroundTransparency = 1
     titleLabel.TextColor3 = THEME.Accent
     titleLabel.Text = title:upper()
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    ApplyFont(titleLabel, 11)
+    ApplyFont(titleLabel, 10)
     AddTextStroke(titleLabel)
-    titleLabel.Parent = notif
+    titleLabel.Parent = innerNotif
     
     local msgLabel = Instance.new("TextLabel")
-    msgLabel.Size = UDim2.new(1, -10, 0, 30)
-    msgLabel.Position = UDim2.new(0, 10, 0, 22)
+    msgLabel.Size = UDim2.new(1, -20, 0, 24)
+    msgLabel.Position = UDim2.new(0, 12, 0, 22)
     msgLabel.BackgroundTransparency = 1
     msgLabel.TextColor3 = THEME.Text
     msgLabel.Text = message
     msgLabel.TextWrapped = true
     msgLabel.TextXAlignment = Enum.TextXAlignment.Left
-    ApplyFont(msgLabel, 11)
+    ApplyFont(msgLabel, 9)
     AddTextStroke(msgLabel)
-    msgLabel.Parent = notif
+    msgLabel.Parent = innerNotif
     
-    notif.Parent = NotificationContainer
-    
-    Tween(notif, 0.25, {Size = UDim2.new(1, 0, 0, 60)})
+    -- Анимация входа
+    Tween(notif, 0.25, {Size = UDim2.new(1, 0, 0, 50)}, Enum.EasingStyle.Quart)
+    Tween(innerNotif, 0.35, {Position = UDim2.new(0, 0, 0, 0)}, Enum.EasingStyle.Quart)
     
     task.delay(duration, function()
         pcall(function()
-            local t = Tween(notif, 0.2, {Size = UDim2.new(1, 0, 0, 0)})
-            t.Completed:Connect(function()
+            local tSlide = Tween(innerNotif, 0.3, {Position = UDim2.new(1.3, 0, 0, 0)}, Enum.EasingStyle.Quart)
+            Tween(notif, 0.3, {Size = UDim2.new(1, 0, 0, 0)}, Enum.EasingStyle.Quart)
+            
+            tSlide.Completed:Connect(function()
                 notif:Destroy()
             end)
         end)
@@ -577,7 +596,8 @@ function Perplexity.new()
     TitleText.Size = UDim2.new(1, -20, 1, 0)
     TitleText.Position = UDim2.new(0, 15, 0, 0)
     TitleText.BackgroundTransparency = 1
-    TitleText.Text = "PERPLEXITY <font color='rgb(255,255,255)'>.WIN</font>"
+    -- [[ УДАЛЕН ЛИШНИЙ ПРОБЕЛ ПЕРЕД .WIN ]]
+    TitleText.Text = "PERPLEXITY<font color='rgb(255,255,255)'>.WIN</font>"
     TitleText.RichText = true
     TitleText.TextColor3 = THEME.Accent
     TitleText.Font = Enum.Font.GothamBold
@@ -747,11 +767,12 @@ function Perplexity:CreateTab(name)
     tab.Frame.ZIndex = 2
     tab.Frame.Parent = self.TabContentContainer or self.ContentArea
     
+    -- [[ ОПТИМИЗИРОВАНО ПОД ДВУХКОЛОНОЧНЫЙ ДИЗАЙН (УБИРАЕТ ПУСТОТУ СПРАВА И СЖАТИЕ ШРИФТА) ]]
     tab.Columns = {}
-    for i = 1, 3 do
+    for i = 1, 2 do 
         local col = Instance.new("ScrollingFrame")
-        col.Size = UDim2.new(0.315, 0, 1, 0)
-        col.Position = UDim2.new((i - 1) * 0.34, 0, 0, 0)
+        col.Size = UDim2.new(0.485, 0, 1, 0)
+        col.Position = UDim2.new((i - 1) * 0.515, 0, 0, 0)
         col.BackgroundTransparency = 1
         col.ScrollBarThickness = 0
         col.ZIndex = 2
@@ -838,7 +859,7 @@ function Perplexity:CreateTab(name)
     end
     
     function tab:CreateSection(title, columnIndex)
-        local targetColIndex = (columnIndex == 3) and 3 or ((columnIndex == 2) and 2 or 1)
+        local targetColIndex = (columnIndex == 2) and 2 or 1 -- Поддержка двух колонок
         local col = tab.Columns[targetColIndex]
         local section = {
             Elements = {},
@@ -1291,7 +1312,22 @@ function Perplexity:CreateTab(name)
                     activeColorpicker.S = s
                     activeColorpicker.V = v
                     
-                    ColorpickerWindow.Position = UDim2.new(0, cpBtn.AbsolutePosition.X - 150, 0, cpBtn.AbsolutePosition.Y)
+                    -- [[ УМНОЕ ПОЗИЦИОНИРОВАНИЕ ПАЛИТРЫ (ПРИВЯЗКА К КРАЮ ОСНОВНОГО ОКНА С УЧЕТОМ ГРАНИЦ ЭКРАНА) ]]
+                    if Window and Window.MainFrame then
+                        local menuX = Window.MainFrame.AbsolutePosition.X
+                        local menuY = Window.MainFrame.AbsolutePosition.Y
+                        local menuWidth = Window.MainFrame.AbsoluteSize.X
+                        
+                        local targetX = menuX - 145 -- Позиционируем слева от основного меню
+                        if targetX < 10 then -- Если выходит за край экрана слева, прижимаем вправо
+                            targetX = menuX + menuWidth + 5
+                        end
+                        
+                        ColorpickerWindow.Position = UDim2.new(0, targetX, 0, menuY + 20)
+                    else
+                        ColorpickerWindow.Position = UDim2.new(0, cpBtn.AbsolutePosition.X - 150, 0, cpBtn.AbsolutePosition.Y)
+                    end
+                    
                     ColorpickerWindow.Visible = true
                     
                     svGrid.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
@@ -1806,7 +1842,7 @@ local function SaveConfig(slotName)
         
         local encoded = HttpService:JSONEncode(SaveFlags)
         writefile("perplexity/Configs/" .. slotName .. ".json", encoded)
-        Notify("Configs", "Настройки сохранены в слот: " .. slotName, 3)
+        Notify("DATABASE", "Successfully saved configuration to slot: " .. slotName, 3)
     end)
 end
 
@@ -1824,9 +1860,9 @@ local function LoadConfig(slotName)
                     end)
                 end
             end
-            Notify("Configs", "Конфиг " .. slotName .. " успешно загружен!", 3)
+            Notify("DATABASE", "Configuration '" .. slotName .. "' successfully loaded!", 3)
         else
-            Notify("Configs", "Конфигурация " .. slotName .. " не найдена.", 4)
+            Notify("ERROR", "Configuration '" .. slotName .. "' was not found.", 4)
         end
     end)
 end
