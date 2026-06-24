@@ -584,7 +584,7 @@ function Perplexity.new()
     Window = self 
     
     self.MainFrame = Instance.new("Frame")
-    self.MainFrame.Size = UDim2.new(0, 760, 0, 480) -- Главное окно: 760 x 480
+    self.MainFrame.Size = UDim2.new(0, 810, 0, 480) -- Главное окно: 760 x 480
     self.MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     self.MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     self.MainFrame.BackgroundTransparency = 1
