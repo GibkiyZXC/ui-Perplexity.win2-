@@ -1,6 +1,6 @@
 -- =============================================================================
 -- [[ PERPLEXITY.WIN - OPEN-SOURCE HIGH-FIDELITY UI FRAMEWORK ]]
--- [[ Reactive & Dense Layout Edition - Compact Scale 1.0 ]]
+-- [[ Reactive & Dense Layout Edition - Spacious 835px Width Version ]]
 -- =============================================================================
 
 if getgenv().Perplexity then
@@ -232,7 +232,7 @@ local function Notify(title, message, duration)
     duration = duration or 3
     local notif = Instance.new("Frame")
     notif.Size = UDim2.new(1, 0, 0, 46)
-    notif.Position = UDim2.new(1.2, 0, 0, 0) -- Slide-in start position
+    notif.Position = UDim2.new(1.2, 0, 0, 0)
     notif.BackgroundColor3 = THEME.SectionBg
     notif.BackgroundTransparency = 0.1
     notif.ClipsDescendants = true
@@ -307,7 +307,6 @@ pcall(function()
     end
 end)
 
--- [[ ЧАСТЬ 2. ЭФФЕКТ ТЕМЫ: ЦИФРОВОЙ ДОЖДЬ (MATRIX CODE RAIN) ]]
 local function SetupMenuBackgroundParticles(parent)
     local particleContainer = Instance.new("Frame")
     particleContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -383,7 +382,7 @@ local function SetupMenuBackgroundParticles(parent)
 end
 
 local ColorpickerWindow = Instance.new("Frame")
-ColorpickerWindow.Size = UDim2.new(0, 130, 0, 125) -- Уменьшено до 130 x 125
+ColorpickerWindow.Size = UDim2.new(0, 130, 0, 125)
 ColorpickerWindow.BackgroundColor3 = THEME.SidebarBg
 ColorpickerWindow.Visible = false
 ColorpickerWindow.ZIndex = 1000
@@ -584,7 +583,7 @@ function Perplexity.new()
     Window = self 
     
     self.MainFrame = Instance.new("Frame")
-    self.MainFrame.Size = UDim2.new(0, 810, 0, 480) -- Главное окно: 760 x 480
+    self.MainFrame.Size = UDim2.new(0, 835, 0, 520) -- Установлено: 835 x 520
     self.MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     self.MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     self.MainFrame.BackgroundTransparency = 1
@@ -602,7 +601,7 @@ function Perplexity.new()
     SetupMenuBackgroundParticles(self.MainFrame)
     
     local Sidebar = Instance.new("Frame")
-    Sidebar.Size = UDim2.new(0, 160, 1, -20) -- Сайдбар: 160px
+    Sidebar.Size = UDim2.new(0, 170, 1, -20) -- Ширина сайдбара пропорционально расширена до 170px
     Sidebar.Position = UDim2.new(0, 10, 0, 10)
     Sidebar.BackgroundColor3 = THEME.SidebarBg
     Sidebar.BackgroundTransparency = 0.12
@@ -621,7 +620,7 @@ function Perplexity.new()
     TitleText.Size = UDim2.new(1, -20, 1, 0)
     TitleText.Position = UDim2.new(0, 15, 0, 0)
     TitleText.BackgroundTransparency = 1
-    TitleText.Text = "PERPLEXITY.WIN" -- Логотип без пробелов и лишних тегов
+    TitleText.Text = "PERPLEXITY.WIN"
     TitleText.TextColor3 = THEME.Accent
     TitleText.Font = Enum.Font.GothamBold
     TitleText.TextSize = 12
@@ -676,8 +675,8 @@ function Perplexity.new()
     tabLayout.Parent = self.TabButtonContainer
     
     self.ContentArea = Instance.new("Frame")
-    self.ContentArea.Size = UDim2.new(1, -190, 1, -20)
-    self.ContentArea.Position = UDim2.new(0, 180, 0, 10)
+    self.ContentArea.Size = UDim2.new(1, -200, 1, -20) -- Сдвинуто под ширину сайдбара
+    self.ContentArea.Position = UDim2.new(0, 190, 0, 10)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ZIndex = 2
     self.ContentArea.Parent = self.MainFrame
@@ -732,7 +731,7 @@ function Perplexity:CreateTab(name)
     }
     
     tab.Button = Instance.new("TextButton")
-    tab.Button.Size = UDim2.new(1, -10, 0, 30) -- Высота кнопок вкладок 30px
+    tab.Button.Size = UDim2.new(1, -10, 0, 30)
     tab.Button.BackgroundTransparency = 1
     tab.Button.Text = "" 
     tab.Button.AutoButtonColor = false
@@ -790,7 +789,6 @@ function Perplexity:CreateTab(name)
     tab.Frame.ZIndex = 2
     tab.Frame.Parent = self.TabContentContainer or self.ContentArea
     
-    -- [[ ЧАСТЬ 1. ДВУХКОЛОНОЧНЫЙ КОМПАКТНЫЙ МАКЕТ (2-COLUMN DESIGN) ]]
     tab.Columns = {}
     for i = 1, 2 do
         local col = Instance.new("ScrollingFrame")
@@ -810,7 +808,7 @@ function Perplexity:CreateTab(name)
         
         tab.Columns[i] = col
     end
-    tab.Columns[3] = tab.Columns[2] -- Fallback для обратной совместимости
+    tab.Columns[3] = tab.Columns[2]
     
     tab.Indicator = indicator
     table.insert(allTabs, tab)
@@ -920,12 +918,12 @@ function Perplexity:CreateTab(name)
         section.TitleLabel.Text = title:upper()
         section.TitleLabel.TextColor3 = THEME.Accent
         section.TitleLabel.Font = Enum.Font.GothamBold
-        section.TitleLabel.TextSize = 9
+        section.TitleLabel.TextSize = 10
         section.TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
         section.TitleLabel.LayoutOrder = -100 
         section.TitleLabel.ZIndex = 2
         AddTextStroke(section.TitleLabel)
-        ApplyFont(section.TitleLabel, 9)
+        ApplyFont(section.TitleLabel, 10)
         section.TitleLabel.Parent = section.Frame
         
         table.insert(allSectionTitles, section.TitleLabel)
@@ -1037,7 +1035,7 @@ function Perplexity:CreateTab(name)
             
             section.ElementCount = section.ElementCount + 1
             local btnFrame = Instance.new("Frame")
-            btnFrame.Size = UDim2.new(1, 0, 0, 20) -- Высота уменьшена до 20px
+            btnFrame.Size = UDim2.new(1, 0, 0, 20)
             btnFrame.BackgroundTransparency = 1
             btnFrame.ZIndex = 2
             btnFrame.LayoutOrder = section.ElementCount
@@ -1049,7 +1047,7 @@ function Perplexity:CreateTab(name)
             btn.Text = name
             btn.TextColor3 = THEME.Text
             btn.Font = Enum.Font.GothamMedium
-            btn.TextSize = 9 -- Шрифт уменьшен до 9
+            btn.TextSize = 9
             btn.AutoButtonColor = false
             btn.ZIndex = 2
             AddCorner(btn, 4)
@@ -1086,7 +1084,7 @@ function Perplexity:CreateTab(name)
             
             section.ElementCount = section.ElementCount + 1
             local boxFrame = Instance.new("Frame")
-            boxFrame.Size = UDim2.new(1, 0, 0, 20) -- Высота чекбоксов уменьшена до 20px
+            boxFrame.Size = UDim2.new(1, 0, 0, 20)
             boxFrame.BackgroundTransparency = 1
             boxFrame.ZIndex = 2
             boxFrame.LayoutOrder = section.ElementCount
@@ -1102,7 +1100,7 @@ function Perplexity:CreateTab(name)
             clickContainer.Parent = boxFrame
             
             local indicator = Instance.new("Frame")
-            indicator.Size = UDim2.new(0, 12, 0, 12) -- Габариты индикатора уменьшены до 12x12
+            indicator.Size = UDim2.new(0, 12, 0, 12)
             indicator.Position = UDim2.new(0, 0, 0.5, -6) 
             indicator.BackgroundColor3 = checkbox.State and THEME.Accent or Color3.fromRGB(34, 34, 46)
             indicator.ZIndex = 2
@@ -1129,7 +1127,7 @@ function Perplexity:CreateTab(name)
             label.Text = name
             label.TextColor3 = checkbox.State and THEME.Text or THEME.TextMuted
             label.Font = Enum.Font.GothamMedium
-            label.TextSize = 10 -- Шрифт уменьшен до 10
+            label.TextSize = 10
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.TextTruncate = Enum.TextTruncate.AtEnd
             label.ZIndex = 1 
@@ -1201,7 +1199,7 @@ function Perplexity:CreateTab(name)
                 local kb = {Key = default or "None", Binding = false}
                 
                 local bindBtn = Instance.new("TextButton")
-                bindBtn.Size = UDim2.new(0, 0, 0, 14) -- Высота снижена до 14px
+                bindBtn.Size = UDim2.new(0, 0, 0, 14)
                 bindBtn.AutomaticSize = Enum.AutomaticSize.X
                 bindBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
                 bindBtn.Text = tostring(kb.Key)
@@ -1211,7 +1209,7 @@ function Perplexity:CreateTab(name)
                 bindBtn.AutoButtonColor = false
                 bindBtn.TextXAlignment = Enum.TextXAlignment.Center
                 bindBtn.ZIndex = 4
-                AddCorner(bindBtn, 2)
+                AddCorner(bindBtn, 3)
                 local kbStroke = AddStroke(bindBtn, Color3.fromRGB(56, 56, 74), 1)
                 bindBtn.Parent = subElements
                 
@@ -1318,7 +1316,6 @@ function Perplexity:CreateTab(name)
                     activeColorpicker.S = s
                     activeColorpicker.V = v
                     
-                    -- [[ ЧАСТЬ 1. УМНАЯ ПАЛИТРА ЦВЕТОВ (SMART POSITIONING) ]]
                     local screenX = cpBtn.AbsolutePosition.X - 140
                     if screenX < 20 then
                         screenX = cpBtn.AbsolutePosition.X + cpBtn.AbsoluteSize.X + 10
@@ -1368,14 +1365,14 @@ function Perplexity:CreateTab(name)
             return section:CreateCheckboxInternal(name, default, callback, section.Frame)
         end
         
-        -- [[ ЧАСТЬ 1. СЛАЙДЕРЫ (ВЫСОТА 34PX, ТРЕК 3PX, ПОЛЗУНОК 8PX) ]]
+        -- [[ СПАТИОЗНЫЙ ИНЛАЙН СЛАЙДЕР (ВЫСОТА 34PX, ШИРИНА СЛАЙДЕРА СКОРРЕКТИРОВАНА ПОД 135PX) ]]
         function section:CreateSliderInternal(name, min, max, default, callback, parent)
             parent = parent or section.Frame
             local slider = {Value = default or min}
             
             section.ElementCount = section.ElementCount + 1
             local sliderFrame = Instance.new("Frame")
-            sliderFrame.Size = UDim2.new(1, 0, 0, 34) -- Слайдеры: 34 пикселя
+            sliderFrame.Size = UDim2.new(1, 0, 0, 34)
             sliderFrame.BackgroundTransparency = 1
             sliderFrame.ZIndex = 2
             sliderFrame.LayoutOrder = section.ElementCount
@@ -1407,7 +1404,7 @@ function Perplexity:CreateTab(name)
             valueDisplay.Parent = sliderFrame
             
             local barBg = Instance.new("Frame")
-            barBg.Size = UDim2.new(1, 0, 0, 3) -- Толщина трека: 3 пикселя
+            barBg.Size = UDim2.new(1, 0, 0, 3) -- Толщина 3px
             barBg.Position = UDim2.new(0, 0, 0, 22) 
             barBg.BackgroundColor3 = Color3.fromRGB(34, 34, 46) 
             barBg.ZIndex = 2
@@ -1424,7 +1421,7 @@ function Perplexity:CreateTab(name)
             
             local knob = Instance.new("Frame")
             knob.AnchorPoint = Vector2.new(0.5, 0.5)
-            knob.Size = UDim2.new(0, 8, 0, 8) -- Диаметр ползунка: 8 пикселей
+            knob.Size = UDim2.new(0, 8, 0, 8) -- Диаметр 8px
             knob.Position = UDim2.new(initPct, 0, 0.5, 0)
             knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             knob.ZIndex = 3
@@ -1487,21 +1484,21 @@ function Perplexity:CreateTab(name)
             return section:CreateSliderInternal(name, min, max, default, callback, section.Frame)
         end
         
-        -- [[ ЧАСТЬ 1. ВЫПАДАЮЩИЕ СПИСКИ (СЛОЖЕННЫЙ 36PX, КНОПКА ВЫБОРА 16PX) ]]
+        -- [[ СПАТИОЗНЫЙ ИНЛАЙН ДРОПДАУН (СЛОЖЕННЫЙ 36PX, ШИРИНА КНОПКИ СКОРРЕКТИРОВАНА ПОД 135PX) ]]
         function section:CreateDropdownInternal(name, list, default, callback, parent)
             parent = parent or section.Frame
             local dropdown = {Selected = default or list[1], Open = false}
             
             section.ElementCount = section.ElementCount + 1
             local dropFrame = Instance.new("Frame")
-            dropFrame.Size = UDim2.new(1, 0, 0, 36) -- Высота сложенного меню: 36 пикселей
+            dropFrame.Size = UDim2.new(1, 0, 0, 36) -- Сложенный 36px
             dropFrame.BackgroundTransparency = 1
             dropFrame.ZIndex = 2
             dropFrame.LayoutOrder = section.ElementCount
             dropFrame.Parent = parent
             
             local title = Instance.new("TextLabel")
-            title.Size = UDim2.new(1, 0, 0, 12)
+            title.Size = UDim2.new(1, -145, 1, 0) -- Большой задел под текст слева
             title.Position = UDim2.new(0, 0, 0, 0)
             title.BackgroundTransparency = 1
             title.Text = name
@@ -1513,8 +1510,8 @@ function Perplexity:CreateTab(name)
             title.Parent = dropFrame
             
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 18) -- Высота кнопки выпадающего списка
-            btn.Position = UDim2.new(0, 0, 0, 15)
+            btn.Size = UDim2.new(0, 135, 0, 18) -- Кнопка выбора: 135px шириной
+            btn.Position = UDim2.new(1, -135, 0.5, -9)
             btn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
             btn.Text = "  " .. dropdown.Selected
             btn.TextColor3 = THEME.Text
@@ -1522,6 +1519,7 @@ function Perplexity:CreateTab(name)
             btn.TextSize = 9
             btn.AutoButtonColor = false
             btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.TextTruncate = Enum.TextTruncate.AtEnd
             btn.ZIndex = 2
             AddCorner(btn, 4)
             local btnStroke = AddStroke(btn, Color3.fromRGB(56, 56, 74), 1)
@@ -1540,8 +1538,8 @@ function Perplexity:CreateTab(name)
             arrow.Parent = btn
             
             local container = Instance.new("Frame")
-            container.Size = UDim2.new(1, 0, 0, 0)
-            container.Position = UDim2.new(0, 0, 0, 35) 
+            container.Size = UDim2.new(0, 135, 0, 0) -- Ширина опций 135px
+            container.Position = UDim2.new(1, -135, 0, 22)
             container.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
             container.ZIndex = 50
             container.ClipsDescendants = true
@@ -1554,7 +1552,7 @@ function Perplexity:CreateTab(name)
             dropLayout.SortOrder = Enum.SortOrder.LayoutOrder
             dropLayout.Parent = container
             
-            local targetHeight = #list * 16 -- Высота опций списка: 16 пикселей
+            local targetHeight = #list * 16 -- Опции списка: 16px
             
             local function selectValue(item)
                 dropdown.Selected = item
@@ -1567,7 +1565,7 @@ function Perplexity:CreateTab(name)
             
             for index, item in ipairs(list) do
                 local itemBtn = Instance.new("TextButton")
-                itemBtn.Size = UDim2.new(1, 0, 0, 16) -- Высота кнопки опции: 16 пикселей
+                itemBtn.Size = UDim2.new(1, 0, 0, 16) -- Высота 16px
                 itemBtn.BackgroundTransparency = 1
                 itemBtn.Text = "  " .. item
                 itemBtn.TextColor3 = THEME.TextMuted
@@ -1591,7 +1589,7 @@ function Perplexity:CreateTab(name)
                     selectValue(item)
                     dropdown.Open = false
                     toggleDropdownZIndex(dropFrame, btn, false) 
-                    Tween(container, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                    Tween(container, 0.15, {Size = UDim2.new(0, 135, 0, 0)})
                     Tween(arrow, 0.15, {Rotation = 0})
                     task.delay(0.15, function() container.Visible = false end)
                 end)
@@ -1602,10 +1600,10 @@ function Perplexity:CreateTab(name)
                 toggleDropdownZIndex(dropFrame, btn, dropdown.Open) 
                 if dropdown.Open then
                     container.Visible = true
-                    Tween(container, 0.2, {Size = UDim2.new(1, 0, 0, targetHeight)})
+                    Tween(container, 0.2, {Size = UDim2.new(0, 135, 0, targetHeight)})
                     Tween(arrow, 0.2, {Rotation = 45})
                 else
-                    local t = Tween(container, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                    local t = Tween(container, 0.15, {Size = UDim2.new(0, 135, 0, 0)})
                     Tween(arrow, 0.15, {Rotation = 0})
                     
                     local conn
@@ -1645,14 +1643,14 @@ function Perplexity:CreateTab(name)
             
             section.ElementCount = section.ElementCount + 1
             local kbFrame = Instance.new("Frame")
-            kbFrame.Size = UDim2.new(1, 0, 0, 20) -- Высота строки: 20 пикселей
+            kbFrame.Size = UDim2.new(1, 0, 0, 20)
             kbFrame.BackgroundTransparency = 1
             kbFrame.ZIndex = 2
             kbFrame.LayoutOrder = section.ElementCount
             kbFrame.Parent = parent
             
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -60, 1, 0)
+            label.Size = UDim2.new(1, -145, 1, 0)
             label.BackgroundTransparency = 1
             label.Text = name
             label.TextColor3 = THEME.TextMuted
@@ -1666,13 +1664,13 @@ function Perplexity:CreateTab(name)
             local bindBtn = Instance.new("TextButton")
             bindBtn.AnchorPoint = Vector2.new(1, 0.5)
             bindBtn.Position = UDim2.new(1, 0, 0.5, 0)
-            bindBtn.Size = UDim2.new(0, 0, 0, 14) -- Кнопки биндов: 14px
+            bindBtn.Size = UDim2.new(0, 0, 0, 14)
             bindBtn.AutomaticSize = Enum.AutomaticSize.X
             bindBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
             bindBtn.Text = tostring(keybind.Key)
             bindBtn.TextColor3 = THEME.Accent
             bindBtn.Font = Enum.Font.GothamBold
-            bindBtn.TextSize = 8
+            bindBtn.TextSize = 10
             bindBtn.AutoButtonColor = false
             bindBtn.TextXAlignment = Enum.TextXAlignment.Center
             bindBtn.ZIndex = 2
@@ -1687,7 +1685,7 @@ function Perplexity:CreateTab(name)
             
             local sizeConstraint = Instance.new("UISizeConstraint")
             sizeConstraint.MinSize = Vector2.new(40, 0)
-            sizeConstraint.MaxSize = Vector2.new(110, 14)
+            sizeConstraint.MaxSize = Vector2.new(135, 14)
             sizeConstraint.Parent = bindBtn
             
             local function updateLabelSize()
@@ -1822,7 +1820,6 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
         title.TextColor3 = THEME.Accent
     end
 
-    -- Перекрашиваем левые полосы активных уведомлений на лету
     for _, notif in ipairs(NotificationContainer:GetChildren()) do
         if notif:IsA("Frame") then
             local bar = notif:FindFirstChild("AccentBar")
@@ -1877,7 +1874,6 @@ function Perplexity:LoadConfig(slotName)
     LoadConfig(slotName)
 end
 
--- [[ ЧАСТЬ 5. ИНТЕГРАЦИЯ КОНФИГУРАЦИЙ И ТЕМ (ВСТРОЕННЫЙ МЕТОД КЛАССА) ]]
 function Perplexity:CreateSettingsTab()
     local SettingsTab = self:CreateTab("Settings")
 
@@ -1933,7 +1929,6 @@ function Perplexity:CreateSettingsTab()
     return SettingsTab
 end
 
--- [[ ЧАСТЬ 1. ЗАКРЫТИЕ МЕНЮ БЕЗ КОНФЛИКТОВ ]]
 UserInputService.InputBegan:Connect(function(input, processed)
     if input.KeyCode == toggleKey then
         if UserInputService:GetFocusedTextBox() then
