@@ -1,6 +1,6 @@
 -- =============================================================================
 -- [[ PERPLEXITY.WIN - OPEN-SOURCE HIGH-FIDELITY UI FRAMEWORK ]]
--- [[ Reactive & Perfect Layout Edition ]]
+-- [[ Reactive & Perfect Layout Edition with Robust Config System ]]
 -- =============================================================================
 
 if getgenv().Perplexity then
@@ -1048,7 +1048,7 @@ function Perplexity:CreateTab(name)
             boxFrame.Parent = parent
             
             local clickContainer = Instance.new("TextButton")
-            clickContainer.Size = UDim2.new(1, 0, 1, 0) -- Изначально на всю ширину карточки
+            clickContainer.Size = UDim2.new(1, 0, 1, 0)
             clickContainer.BackgroundTransparency = 1
             clickContainer.Text = ""
             clickContainer.Active = true
@@ -1093,7 +1093,6 @@ function Perplexity:CreateTab(name)
             ApplyFont(label, 11)
             label.Parent = clickContainer
             
-            -- Реактивный контейнер subElements (ширина подстраивается автоматически под детей)
             local subElements = Instance.new("Frame")
             subElements.Size = UDim2.new(0, 0, 1, 0) 
             subElements.AutomaticSize = Enum.AutomaticSize.X
@@ -1111,7 +1110,6 @@ function Perplexity:CreateTab(name)
             subLayout.Padding = UDim.new(0, 8)
             subLayout.Parent = subElements
             
-            -- Умный слушатель размеров, который сужает текстовое поле только когда справа появляются кнопки
             local function updateLayout()
                 local subWidth = subElements.AbsoluteSize.X
                 local paddingOffset = (subWidth > 0) and (subWidth + 8) or 0
@@ -1158,7 +1156,7 @@ function Perplexity:CreateTab(name)
                 local kb = {Key = default or "None", Binding = false}
                 
                 local bindBtn = Instance.new("TextButton")
-                bindBtn.Size = UDim2.new(0, 0, 0, 18) -- Динамическая ширина под длину клавиши
+                bindBtn.Size = UDim2.new(0, 0, 0, 18) 
                 bindBtn.AutomaticSize = Enum.AutomaticSize.X
                 bindBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
                 bindBtn.Text = tostring(kb.Key)
@@ -1188,6 +1186,20 @@ function Perplexity:CreateTab(name)
                     kb.Key = tostring(keyName)
                     bindBtn.Text = kb.Key
                     SaveFlags[name .. "_key"] = kb.Key
+                    
+                    if cb then
+                        local parsedKey = keyName
+                        pcall(function()
+                            if Enum.KeyCode[keyName] then
+                                parsedKey = Enum.KeyCode[keyName]
+                            elseif Enum.UserInputType[keyName] then
+                                parsedKey = Enum.UserInputType[keyName]
+                            end
+                        end)
+                        task.spawn(function()
+                            pcall(cb, parsedKey)
+                        end)
+                    end
                 end
                 
                 bindBtn.MouseEnter:Connect(function()
@@ -1211,13 +1223,11 @@ function Perplexity:CreateTab(name)
                             setKey(inKey.KeyCode.Name)
                             kb.Binding = false
                             Tween(kbStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
-                            task.spawn(function() pcall(cb, inKey.KeyCode) end)
                             conn:Disconnect()
                         elseif inKey.UserInputType == Enum.UserInputType.MouseButton1 or inKey.UserInputType == Enum.UserInputType.MouseButton2 then
                             setKey(inKey.UserInputType.Name == "MouseButton1" and "MB1" or "MB2")
                             kb.Binding = false
                             Tween(kbStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
-                            task.spawn(function() pcall(cb, inKey.UserInputType) end)
                             conn:Disconnect()
                         end
                     end)
@@ -1253,6 +1263,12 @@ function Perplexity:CreateTab(name)
                     cp.Value = colorValue
                     cpBtn.BackgroundColor3 = colorValue
                     SaveFlags[name .. "_color"] = colorValue:ToHex()
+                    
+                    if cb then
+                        task.spawn(function()
+                            pcall(cb, colorValue)
+                        end)
+                    end
                 end
                 
                 cpBtn.MouseEnter:Connect(function()
@@ -1600,7 +1616,7 @@ function Perplexity:CreateTab(name)
             kbFrame.Parent = parent
             
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -60, 1, 0) -- Изначально, будет реактивно обновлено под размер кнопки
+            label.Size = UDim2.new(1, -60, 1, 0) 
             label.BackgroundTransparency = 1
             label.Text = name
             label.TextColor3 = THEME.TextMuted
@@ -1614,7 +1630,7 @@ function Perplexity:CreateTab(name)
             local bindBtn = Instance.new("TextButton")
             bindBtn.AnchorPoint = Vector2.new(1, 0.5)
             bindBtn.Position = UDim2.new(1, 0, 0.5, 0)
-            bindBtn.Size = UDim2.new(0, 0, 0, 18) -- Высота 18, ширина автоматическая
+            bindBtn.Size = UDim2.new(0, 0, 0, 18) 
             bindBtn.AutomaticSize = Enum.AutomaticSize.X
             bindBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
             bindBtn.Text = tostring(keybind.Key)
@@ -1638,7 +1654,6 @@ function Perplexity:CreateTab(name)
             sizeConstraint.MaxSize = Vector2.new(120, 18)
             sizeConstraint.Parent = bindBtn
             
-            -- Реактивное управление шириной текстового поля
             local function updateLabelSize()
                 local btnWidth = bindBtn.AbsoluteSize.X
                 label.Size = UDim2.new(1, -btnWidth - 10, 1, 0)
@@ -1652,6 +1667,20 @@ function Perplexity:CreateTab(name)
                 keybind.Key = tostring(keyName)
                 bindBtn.Text = keybind.Key
                 SaveFlags[name] = keybind.Key
+                
+                if callback then
+                    local parsedKey = keyName
+                    pcall(function()
+                        if Enum.KeyCode[keyName] then
+                            parsedKey = Enum.KeyCode[keyName]
+                        elseif Enum.UserInputType[keyName] then
+                            parsedKey = Enum.UserInputType[keyName]
+                        end
+                    end)
+                    task.spawn(function()
+                        pcall(callback, parsedKey)
+                    end)
+                end
             end
             
             bindBtn.MouseEnter:Connect(function() Tween(bindStroke, 0.1, {Color = THEME.Accent}) end)
@@ -1671,13 +1700,11 @@ function Perplexity:CreateTab(name)
                         setKey(inKey.KeyCode.Name)
                         keybind.Binding = false
                         Tween(bindStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
-                        task.spawn(function() pcall(callback, inKey.KeyCode) end)
                         conn:Disconnect()
                     elseif inKey.UserInputType == Enum.UserInputType.MouseButton1 or inKey.UserInputType == Enum.UserInputType.MouseButton2 then
                         setKey(inKey.UserInputType.Name == "MouseButton1" and "MB1" or "MB2")
                         keybind.Binding = false
                         Tween(bindStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
-                        task.spawn(function() pcall(callback, inKey.UserInputType) end)
                         conn:Disconnect()
                     end
                 end)
@@ -1803,5 +1830,25 @@ local function LoadConfig(slotName)
         end
     end)
 end
+
+-- [[ EXPOSING CONFIG METHODS TO THE LIBRARY CLASS ]]
+function Perplexity:SaveConfig(slotName)
+    SaveConfig(slotName)
+end
+
+function Perplexity:LoadConfig(slotName)
+    LoadConfig(slotName)
+end
+
+-- [[ TOGGLE MENU INTERACTION INTERCEPTOR ]]
+UserInputService.InputBegan:Connect(function(input, processed)
+    if UserInputService:GetFocusedTextBox() then return end
+    
+    if input.KeyCode == toggleKey then
+        if Window then
+            Window:Toggle(not menuVisible)
+        end
+    end
+end)
 
 return Perplexity
