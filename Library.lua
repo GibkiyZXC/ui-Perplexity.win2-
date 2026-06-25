@@ -471,8 +471,10 @@ local function updateSV(pos)
         activeColorpicker.S = s
         activeColorpicker.V = v
         local color = Color3.fromHSV(activeColorpicker.H, s, v)
-        activeColorpicker.Button.BackgroundColor3 = color
         hexLabel.Text = "HEX: #" .. color:ToHex():upper()
+        if activeColorpicker.SetColor then
+            activeColorpicker.SetColor(color)
+        end
         activeColorpicker.Callback(color)
     end
 end
@@ -487,8 +489,10 @@ local function updateHue(pos)
     if activeColorpicker then
         activeColorpicker.H = h
         local color = Color3.fromHSV(h, activeColorpicker.S, activeColorpicker.V)
-        activeColorpicker.Button.BackgroundColor3 = color
         hexLabel.Text = "HEX: #" .. color:ToHex():upper()
+        if activeColorpicker.SetColor then
+            activeColorpicker.SetColor(color)
+        end
         activeColorpicker.Callback(color)
     end
 end
@@ -535,10 +539,6 @@ UserInputService.InputBegan:Connect(function(input)
             if os.clock() - openTime < 0.1 then return end
             
             local mPos = UserInputService:GetMouseLocation()
-            if ScreenGui.IgnoreGuiInset then
-                mPos = mPos + GuiService:GetGuiInset()
-            end
-            
             local wPos = ColorpickerWindow.AbsolutePosition
             local wSize = ColorpickerWindow.AbsoluteSize
             
@@ -1321,7 +1321,8 @@ function Perplexity:CreateTab(name)
                     activeColorpicker = {
                         H = 0, S = 1, V = 1,
                         Button = cpBtn,
-                        Callback = cb
+                        Callback = cb,
+                        SetColor = setColor
                     }
                     
                     local h, s, v = cp.Value:ToHSV()
@@ -1334,7 +1335,8 @@ function Perplexity:CreateTab(name)
                         screenX = cpBtn.AbsolutePosition.X + cpBtn.AbsoluteSize.X + 10
                     end
                     
-                    ColorpickerWindow.Position = UDim2.new(0, screenX, 0, cpBtn.AbsolutePosition.Y)
+                    local insetY = ScreenGui.IgnoreGuiInset and GuiService:GetGuiInset().Y or 0
+                    ColorpickerWindow.Position = UDim2.new(0, screenX, 0, cpBtn.AbsolutePosition.Y + insetY)
                     ColorpickerWindow.Visible = true
                     
                     svGrid.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
