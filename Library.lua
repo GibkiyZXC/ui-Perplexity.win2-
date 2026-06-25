@@ -23,6 +23,7 @@ local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
+local GuiService = game:GetService("GuiService")
 
 local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
 if not PlayerGui then
@@ -534,12 +535,26 @@ UserInputService.InputBegan:Connect(function(input)
             if openedThisFrame then return end
             
             local mPos = UserInputService:GetMouseLocation()
+            if ScreenGui.IgnoreGuiInset then
+                mPos = mPos + GuiService:GetGuiInset()
+            end
+            
             local wPos = ColorpickerWindow.AbsolutePosition
             local wSize = ColorpickerWindow.AbsoluteSize
             
             local inside = mPos.X >= wPos.X and mPos.X <= wPos.X + wSize.X and
                            mPos.Y >= wPos.Y and mPos.Y <= wPos.Y + wSize.Y
-            if not inside then
+            
+            local cpBtnInside = false
+            if activeColorpicker and activeColorpicker.Button then
+                local btn = activeColorpicker.Button
+                local bPos = btn.AbsolutePosition
+                local bSize = btn.AbsoluteSize
+                cpBtnInside = mPos.X >= bPos.X and mPos.X <= bPos.X + bSize.X and
+                              mPos.Y >= bPos.Y and mPos.Y <= bPos.Y + bSize.Y
+            end
+            
+            if not inside and not cpBtnInside then
                 ColorpickerWindow.Visible = false
             end
         end
@@ -563,7 +578,6 @@ function Perplexity.new(titleText)
     local self = setmetatable({}, Perplexity)
     Window = self 
     
-    -- Размеры возвращены обратно в просторный формат (835 x 520)
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = UDim2.new(0, 835, 0, 520)
     self.MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -582,7 +596,6 @@ function Perplexity.new(titleText)
     
     SetupMenuBackgroundParticles(self.MainFrame)
     
-    -- Сайдбар возвращен к ширине 210 пикселей
     local Sidebar = Instance.new("Frame")
     Sidebar.Size = UDim2.new(0, 210, 1, -20) 
     Sidebar.Position = UDim2.new(0, 10, 0, 10)
@@ -657,7 +670,6 @@ function Perplexity.new(titleText)
     tabLayout.Padding = UDim.new(0, 3)
     tabLayout.Parent = self.TabButtonContainer
     
-    -- Контентная область смещена под ширину сайдбара 210 пикселей (210 + 20 отступы)
     self.ContentArea = Instance.new("Frame")
     self.ContentArea.Size = UDim2.new(1, -240, 1, -20) 
     self.ContentArea.Position = UDim2.new(0, 230, 0, 10)
@@ -734,6 +746,8 @@ function Perplexity:CreateTab(name)
     AddTextStroke(tabLabel)
     ApplyFont(tabLabel, 12)
     tabLabel.Parent = tab.Button
+    
+    tab.Label = tabLabel
     
     local hoverBg = Instance.new("Frame")
     hoverBg.Size = UDim2.new(1, 0, 1, 0)
@@ -1019,7 +1033,7 @@ function Perplexity:CreateTab(name)
             
             section.ElementCount = section.ElementCount + 1
             local btnFrame = Instance.new("Frame")
-            btnFrame.Size = UDim2.new(1, 0, 0, 24) -- Крупная высота 24px
+            btnFrame.Size = UDim2.new(1, 0, 0, 24)
             btnFrame.BackgroundTransparency = 1
             btnFrame.ZIndex = 2
             btnFrame.LayoutOrder = section.ElementCount
@@ -1069,7 +1083,7 @@ function Perplexity:CreateTab(name)
             
             section.ElementCount = section.ElementCount + 1
             local boxFrame = Instance.new("Frame")
-            boxFrame.Size = UDim2.new(1, 0, 0, 22) -- Крупная высота 22px
+            boxFrame.Size = UDim2.new(1, 0, 0, 22) 
             boxFrame.BackgroundTransparency = 1
             boxFrame.ZIndex = 2
             boxFrame.LayoutOrder = section.ElementCount
@@ -1143,10 +1157,17 @@ function Perplexity:CreateTab(name)
                 local paddingOffset = (subWidth > 0) and (subWidth + 6) or 0
                 clickContainer.Size = UDim2.new(1, -paddingOffset, 1, 0)
             end
+            
             subElements:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout)
+            subElements.ChildAdded:Connect(function(child)
+                if child:IsA("GuiObject") then
+                    child:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout)
+                end
+                updateLayout()
+            end)
             task.spawn(updateLayout)
             
-            local function update()
+            local function update(init)
                 if checkbox.State then
                     Tween(indicator, 0.15, {BackgroundColor3 = THEME.Accent})
                     Tween(indStroke, 0.15, {Color = THEME.Accent})
@@ -1161,9 +1182,11 @@ function Perplexity:CreateTab(name)
                 
                 SaveFlags[name] = checkbox.State
                 
-                task.spawn(function()
-                    pcall(callback, checkbox.State)
-                end)
+                if not init then
+                    task.spawn(function()
+                        pcall(callback, checkbox.State)
+                    end)
+                end
             end
             
             clickContainer.MouseEnter:Connect(function()
@@ -1184,7 +1207,7 @@ function Perplexity:CreateTab(name)
                 local kb = {Key = default or "None", Binding = false}
                 
                 local bindBtn = Instance.new("TextButton")
-                bindBtn.Size = UDim2.new(0, 0, 0, 16) -- Высота 16px
+                bindBtn.Size = UDim2.new(0, 0, 0, 16)
                 bindBtn.AutomaticSize = Enum.AutomaticSize.X
                 bindBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
                 bindBtn.Text = tostring(kb.Key)
@@ -1289,6 +1312,11 @@ function Perplexity:CreateTab(name)
                 end)
                 
                 cpBtn.MouseButton1Click:Connect(function()
+                    if ColorpickerWindow.Visible and activeColorpicker and activeColorpicker.Button == cpBtn then
+                        ColorpickerWindow.Visible = false
+                        return
+                    end
+                    
                     openedThisFrame = true
                     activeColorpicker = {
                         H = 0, S = 1, V = 1,
@@ -1301,10 +1329,9 @@ function Perplexity:CreateTab(name)
                     activeColorpicker.S = s
                     activeColorpicker.V = v
                     
-                    -- Умная палитра: выравнивание по левой стороне главного фрейма (если не выходит за границы экрана)
-                    local screenX = Window.MainFrame.AbsolutePosition.X - 140
+                    local screenX = cpBtn.AbsolutePosition.X - 140
                     if screenX < 20 then
-                        screenX = Window.MainFrame.AbsolutePosition.X + Window.MainFrame.AbsoluteSize.X + 10
+                        screenX = cpBtn.AbsolutePosition.X + cpBtn.AbsoluteSize.X + 10
                     end
                     
                     ColorpickerWindow.Position = UDim2.new(0, screenX, 0, cpBtn.AbsolutePosition.Y)
@@ -1342,8 +1369,8 @@ function Perplexity:CreateTab(name)
                 end
             }
             
-            table.insert(allCheckboxes, {Indicator = indicator, Label = label, CheckboxObj = checkbox})
-            SaveFlags[name] = checkbox.State
+            table.insert(allCheckboxes, {Indicator = indicator, Label = label, CheckboxObj = checkbox, Stroke = indStroke})
+            update(true)
             table.insert(section.Elements, {Name = name, Frame = boxFrame})
             return checkbox
         end
@@ -1357,7 +1384,7 @@ function Perplexity:CreateTab(name)
             
             section.ElementCount = section.ElementCount + 1
             local sliderFrame = Instance.new("Frame")
-            sliderFrame.Size = UDim2.new(1, 0, 0, 38) -- Высота 38px
+            sliderFrame.Size = UDim2.new(1, 0, 0, 38)
             sliderFrame.BackgroundTransparency = 1
             sliderFrame.ZIndex = 2
             sliderFrame.LayoutOrder = section.ElementCount
@@ -1390,7 +1417,7 @@ function Perplexity:CreateTab(name)
             
             local barBg = Instance.new("Frame")
             barBg.Size = UDim2.new(1, 0, 0, 3)
-            barBg.Position = UDim2.new(0, 0, 0, 26) -- Сдвинуто вниз под увеличенный текст
+            barBg.Position = UDim2.new(0, 0, 0, 26)
             barBg.BackgroundColor3 = Color3.fromRGB(34, 34, 46) 
             barBg.ZIndex = 2
             AddCorner(barBg, 2)
@@ -1475,7 +1502,7 @@ function Perplexity:CreateTab(name)
             
             section.ElementCount = section.ElementCount + 1
             local dropFrame = Instance.new("Frame")
-            dropFrame.Size = UDim2.new(1, 0, 0, 40) -- Высота 40px
+            dropFrame.Size = UDim2.new(1, 0, 0, 40)
             dropFrame.BackgroundTransparency = 1
             dropFrame.ZIndex = 2
             dropFrame.LayoutOrder = section.ElementCount
@@ -1494,7 +1521,7 @@ function Perplexity:CreateTab(name)
             title.Parent = dropFrame
             
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0, 135, 0, 22) -- Высота раскрывающей кнопки 22px
+            btn.Size = UDim2.new(0, 135, 0, 22)
             btn.Position = UDim2.new(1, -135, 0.5, -11)
             btn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
             btn.Text = "  " .. dropdown.Selected
@@ -1537,7 +1564,7 @@ function Perplexity:CreateTab(name)
             dropLayout.SortOrder = Enum.SortOrder.LayoutOrder
             dropLayout.Parent = container
             
-            local targetHeight = #list * 18 -- Элементы списка по 18px
+            local targetHeight = #list * 18
             
             local function selectValue(item)
                 dropdown.Selected = item
@@ -1628,7 +1655,7 @@ function Perplexity:CreateTab(name)
             
             section.ElementCount = section.ElementCount + 1
             local kbFrame = Instance.new("Frame")
-            kbFrame.Size = UDim2.new(1, 0, 0, 22) -- Высота 22px
+            kbFrame.Size = UDim2.new(1, 0, 0, 22)
             kbFrame.BackgroundTransparency = 1
             kbFrame.ZIndex = 2
             kbFrame.LayoutOrder = section.ElementCount
@@ -1649,7 +1676,7 @@ function Perplexity:CreateTab(name)
             local bindBtn = Instance.new("TextButton")
             bindBtn.AnchorPoint = Vector2.new(1, 0.5)
             bindBtn.Position = UDim2.new(1, 0, 0.5, 0)
-            bindBtn.Size = UDim2.new(0, 0, 0, 16) -- Высота кнопки бинда 16px
+            bindBtn.Size = UDim2.new(0, 0, 0, 16)
             bindBtn.AutomaticSize = Enum.AutomaticSize.X
             bindBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
             bindBtn.Text = tostring(keybind.Key)
@@ -1774,6 +1801,9 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
     for _, cb in ipairs(allCheckboxes) do
         if cb.CheckboxObj.State then
             cb.Indicator.BackgroundColor3 = THEME.Accent
+            if cb.Stroke then
+                cb.Stroke.Color = THEME.Accent
+            end
         end
     end
     
@@ -1793,7 +1823,9 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
     for _, t in ipairs(allTabs) do
         t.Indicator.BackgroundColor3 = THEME.Accent
         if Window.ActiveTab == t then
-            t.Button.TextColor3 = THEME.Accent
+            if t.Label then
+                t.Label.TextColor3 = THEME.Accent
+            end
         end
     end
     
@@ -1859,11 +1891,9 @@ function Perplexity:LoadConfig(slotName)
     LoadConfig(slotName)
 end
 
--- // НОВЫЙ ВСТРОЕННЫЙ МЕТОД СОЗДАНИЯ НАСТРОЕК (ПРОПОРЦИОНАЛЬНЫЙ ФОРМАТ)
 function Perplexity:CreateSettingsTab()
     local SettingsTab = self:CreateTab("Settings")
 
-    -- 1. Configuration Manager (Левая колонка)
     local ConfigSection = SettingsTab:CreateSection("Configuration Manager", 1)
     local selectedSlot = "Slot 1"
 
@@ -1879,16 +1909,13 @@ function Perplexity:CreateSettingsTab()
         self:LoadConfig(selectedSlot)
     end)
 
-    -- 2. Настройки кастомизации интерфейса (Правая колонка)
     local MenuSettings = SettingsTab:CreateSection("Menu Settings", 2)
 
-    -- Смена клавиши скрытия интерфейса
     MenuSettings:CreateKeybind("Hide / Show Key", "RightShift", function(key)
         getgenv().toggleKey = key
         _G.toggleKey = key
     end)
 
-    -- Интеграция выпадающего списка выбора готовых тем оформления
     local themeList = {}
     for themeName, _ in pairs(Perplexity.Presets) do
         table.insert(themeList, themeName)
@@ -1906,7 +1933,6 @@ function Perplexity:CreateSettingsTab()
         end
     end)
 
-    -- Дополнительная кастомная палитра для произвольного цвета акцента
     local CustomThemeColor = MenuSettings:CreateCheckbox("Custom Color Accent", false, function() end)
     CustomThemeColor:CreateColorpicker(Color3.fromRGB(255, 30, 60), function(color)
         self:UpdateTheme(color, {
@@ -1919,7 +1945,6 @@ function Perplexity:CreateSettingsTab()
     return SettingsTab
 end
 
--- // Закрытие меню без конфликтов по фокусу TextBox
 UserInputService.InputBegan:Connect(function(input, processed)
     if UserInputService:GetFocusedTextBox() then return end
     
