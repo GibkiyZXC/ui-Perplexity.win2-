@@ -456,7 +456,7 @@ AddTextStroke(hexLabel)
 hexLabel.Parent = ColorpickerWindow
 
 local activeColorpicker = nil
-local openedThisFrame = false
+local openTime = 0
 
 local function updateSV(pos)
     local relativeX = math.clamp((pos.X - svGrid.AbsolutePosition.X) / svGrid.AbsoluteSize.X, 0, 1)
@@ -532,7 +532,7 @@ end)
 UserInputService.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         if ColorpickerWindow.Visible then
-            if openedThisFrame then return end
+            if os.clock() - openTime < 0.1 then return end
             
             local mPos = UserInputService:GetMouseLocation()
             if ScreenGui.IgnoreGuiInset then
@@ -1317,7 +1317,7 @@ function Perplexity:CreateTab(name)
                         return
                     end
                     
-                    openedThisFrame = true
+                    openTime = os.clock()
                     activeColorpicker = {
                         H = 0, S = 1, V = 1,
                         Button = cpBtn,
@@ -1341,9 +1341,6 @@ function Perplexity:CreateTab(name)
                     svKnob.Position = UDim2.new(s, 0, 1 - v, 0)
                     hueKnob.Position = UDim2.new(0.5, 0, h, 0)
                     hexLabel.Text = "HEX: #" .. cp.Value:ToHex():upper()
-                    
-                    task.wait()
-                    openedThisFrame = false
                 end)
                 
                 Flags[name .. "_color"] = {
@@ -1916,30 +1913,56 @@ function Perplexity:CreateSettingsTab()
         _G.toggleKey = key
     end)
 
+    local currentPresetColor = Color3.fromRGB(255, 30, 60)
+    local lastCustomColor = Color3.fromRGB(255, 30, 60)
+    local customAccentEnabled = false
+
     local themeList = {}
     for themeName, _ in pairs(Perplexity.Presets) do
         table.insert(themeList, themeName)
     end
     table.sort(themeList)
 
-    MenuSettings:CreateDropdown("Theme Preset", themeList, "Red (Default)", function(selectedName)
+    local ThemeDropdown = MenuSettings:CreateDropdown("Theme Preset", themeList, "Red (Default)", function(selectedName)
         local selectedColor = Perplexity.Presets[selectedName]
         if selectedColor then
-            self:UpdateTheme(selectedColor, {
-                selectedColor,
-                Color3.fromRGB(selectedColor.R * 255 * 0.4, selectedColor.G * 255 * 0.4, selectedColor.B * 255 * 0.4),
+            currentPresetColor = selectedColor
+            if not customAccentEnabled then
+                self:UpdateTheme(selectedColor, {
+                    selectedColor,
+                    Color3.fromRGB(selectedColor.R * 255 * 0.4, selectedColor.G * 255 * 0.4, selectedColor.B * 255 * 0.4),
+                    Color3.fromRGB(25, 25, 30)
+                })
+            end
+        end
+    end)
+
+    local CustomThemeColor = MenuSettings:CreateCheckbox("Custom Color Accent", false, function(state)
+        customAccentEnabled = state
+        if state then
+            self:UpdateTheme(lastCustomColor, {
+                lastCustomColor,
+                Color3.fromRGB(lastCustomColor.R * 255 * 0.4, lastCustomColor.G * 255 * 0.4, lastCustomColor.B * 255 * 0.4),
+                Color3.fromRGB(25, 25, 30)
+            })
+        else
+            self:UpdateTheme(currentPresetColor, {
+                currentPresetColor,
+                Color3.fromRGB(currentPresetColor.R * 255 * 0.4, currentPresetColor.G * 255 * 0.4, currentPresetColor.B * 255 * 0.4),
                 Color3.fromRGB(25, 25, 30)
             })
         end
     end)
 
-    local CustomThemeColor = MenuSettings:CreateCheckbox("Custom Color Accent", false, function() end)
     CustomThemeColor:CreateColorpicker(Color3.fromRGB(255, 30, 60), function(color)
-        self:UpdateTheme(color, {
-            color, 
-            Color3.fromRGB(color.R * 255 * 0.4, color.G * 255 * 0.4, color.B * 255 * 0.4),
-            Color3.fromRGB(25, 25, 30)
-        })
+        lastCustomColor = color
+        if customAccentEnabled then
+            self:UpdateTheme(color, {
+                color, 
+                Color3.fromRGB(color.R * 255 * 0.4, color.G * 255 * 0.4, color.B * 255 * 0.4),
+                Color3.fromRGB(25, 25, 30)
+            })
+        end
     end)
     
     return SettingsTab
