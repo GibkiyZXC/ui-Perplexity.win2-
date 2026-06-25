@@ -578,6 +578,9 @@ function Perplexity.new(titleText)
     local self = setmetatable({}, Perplexity)
     Window = self 
     
+    self.ScreenGui = ScreenGui
+    getgenv().Perplexity = self
+    
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = UDim2.new(0, 835, 0, 520)
     self.MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -1154,6 +1157,7 @@ function Perplexity:CreateTab(name)
             
             local function updateLayout()
                 local subWidth = subElements.AbsoluteSize.X
+                local paddingOffset = (subWidth > 0) smuggled with padding to prevent collision or overlay
                 local paddingOffset = (subWidth > 0) and (subWidth + 6) or 0
                 clickContainer.Size = UDim2.new(1, -paddingOffset, 1, 0)
             end
