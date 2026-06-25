@@ -132,10 +132,6 @@ local VisualsTab = Window:CreateTab("Visuals")
 local ESPSettings = VisualsTab:CreateSection("ESP Settings", 1)
 local ESPColors = VisualsTab:CreateSection("Colors & Transparency", 2)
 
--- Вкладка Настроек Меню
-local SettingsTab = Window:CreateTab("Settings")
-local MenuSettings = SettingsTab:CreateSection("Menu Settings", 1)
-
 -- // ЗАПОЛНЕНИЕ ИНТЕРФЕЙСА
 
 -- Раздел Аимбота
@@ -244,14 +240,12 @@ ESPColors:CreateSlider("Health Glow Transparency %", 0, 100, 65, function(value)
     CONFIG.GlowTransparency = value / 100
 end)
 
--- Раздел настроек управления интерфейсом
+-- // Инициализация глобального бинда по умолчанию
 getgenv().toggleKey = Enum.KeyCode.RightShift
 _G.toggleKey = Enum.KeyCode.RightShift
 
-MenuSettings:CreateKeybind("Hide / Show Key", "RightShift", function(key)
-    getgenv().toggleKey = key
-    _G.toggleKey = key
-end)
+-- // АВТОМАТИЧЕСКАЯ ИНИЦИАЛИЗАЦИЯ НАСТРОЕК (Config Manager, Смена Темы, Смена Бинда скрытия)
+Window:CreateSettingsTab()
 
 -- // СОЗДАНИЕ КОНТЕЙНЕРА ИНТЕРФЕЙСА ДЛЯ ESP
 local ScreenGui = Instance.new("ScreenGui")
