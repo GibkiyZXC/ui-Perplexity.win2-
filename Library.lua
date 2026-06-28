@@ -1102,8 +1102,9 @@ function Perplexity:CreateTab(name)
             clickContainer.Parent = boxFrame
             
             local indicator = Instance.new("Frame")
-            indicator.Size = UDim2.new(0, 12, 0, 12)
-            indicator.Position = UDim2.new(0, 0, 0.5, -6) 
+            -- Увеличен размер с 12 до 14 для чистоты отрисовки на всех разрешениях
+            indicator.Size = UDim2.new(0, 14, 0, 14)
+            indicator.Position = UDim2.new(0, 0, 0.5, -7) 
             indicator.BackgroundColor3 = checkbox.State and THEME.Accent or Color3.fromRGB(34, 34, 46)
             indicator.ZIndex = 2
             AddCorner(indicator, 2)
@@ -1114,7 +1115,8 @@ function Perplexity:CreateTab(name)
             dot.AnchorPoint = Vector2.new(0.5, 0.5)
             dot.Position = UDim2.new(0.5, 0, 0.5, 0)
             dot.Size = checkbox.State and UDim2.new(1, -2, 1, -2) or UDim2.new(0, 0, 0, 0)
-            dot.Image = "rbxassetid://3944680095"
+            -- Обновлено на валидную современную иконку-галочку Lucide
+            dot.Image = "rbxassetid://10709790644"
             dot.ImageColor3 = Color3.fromRGB(255, 255, 255)
             dot.ScaleType = Enum.ScaleType.Fit
             dot.BackgroundTransparency = 1
@@ -1123,8 +1125,9 @@ function Perplexity:CreateTab(name)
             dot.Parent = indicator
             
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -18, 1, 0)
-            label.Position = UDim2.new(0, 18, 0, 0)
+            -- Сдвинуто вправо, чтобы соответствовать размеру 14px у чекбокса
+            label.Size = UDim2.new(1, -20, 1, 0)
+            label.Position = UDim2.new(0, 20, 0, 0)
             label.BackgroundTransparency = 1
             label.Text = name
             label.TextColor3 = checkbox.State and THEME.Text or THEME.TextMuted
