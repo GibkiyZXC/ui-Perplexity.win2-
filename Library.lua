@@ -1157,7 +1157,6 @@ function Perplexity:CreateTab(name)
             
             local function updateLayout()
                 local subWidth = subElements.AbsoluteSize.X
-                local paddingOffset = (subWidth > 0) smuggled with padding to prevent collision or overlay
                 local paddingOffset = (subWidth > 0) and (subWidth + 6) or 0
                 clickContainer.Size = UDim2.new(1, -paddingOffset, 1, 0)
             end
