@@ -1,7 +1,4 @@
--- =============================================================================
--- [[ PERPLEXITY.WIN - OPEN-SOURCE HIGH-FIDELITY UI FRAMEWORK ]]
--- [[ Reactive & Dense Layout Edition - Spacious 835px Width (210px Sidebar) ]]
--- =============================================================================
+-- perplexity.win ui lib
 
 if getgenv().Perplexity then
     pcall(function()
@@ -17,13 +14,14 @@ while not LocalPlayer do
     LocalPlayer = Players.LocalPlayer
 end
 
+local mouse = LocalPlayer:GetMouse()
+
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
-local GuiService = game:GetService("GuiService")
 
 local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
 if not PlayerGui then
@@ -33,7 +31,7 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "Perplexity_UI"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true 
+ScreenGui.IgnoreGuiInset = true
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local success, err = pcall(function()
@@ -47,7 +45,7 @@ local THEME = {
     Background = Color3.fromRGB(11, 11, 14),
     SidebarBg = Color3.fromRGB(15, 15, 20),
     SectionBg = Color3.fromRGB(16, 16, 23),
-    Accent = Color3.fromRGB(255, 30, 60), 
+    Accent = Color3.fromRGB(255, 30, 60),
     Text = Color3.fromRGB(240, 240, 245),
     TextMuted = Color3.fromRGB(110, 112, 125),
     Border = Color3.fromRGB(34, 34, 44),
@@ -65,7 +63,7 @@ end
 
 local optBlurEnabled = true
 local optSnowEnabled = true
-local toggleKey = Enum.KeyCode.RightShift 
+local toggleKey = Enum.KeyCode.RightShift
 
 local allParticles = {}
 local allCheckboxes = {}
@@ -75,16 +73,16 @@ local allKeybinds = {}
 local allTabs = {}
 local allSubTabs = {}
 local allSectionTitles = {}
-local allHoverGlows = {} 
+local allHoverGlows = {}
 
 local TitleTextLabel = nil
 local Window = nil
 local menuVisible = true
 
 local activeParticleColors = {
-    Color3.fromRGB(255, 30, 60),  
-    Color3.fromRGB(100, 10, 25),  
-    Color3.fromRGB(25, 25, 30)    
+    Color3.fromRGB(255, 30, 60),
+    Color3.fromRGB(100, 10, 25),
+    Color3.fromRGB(25, 25, 30)
 }
 
 local Flags = {}
@@ -94,11 +92,11 @@ local MenuFont = Enum.Font.GothamMedium
 local successLoad, errLoad = pcall(function()
     if not isfolder("nexonix") then makefolder("nexonix") end
     if not isfolder("nexonix/Assets") then makefolder("nexonix/Assets") end
-    
+
     if not isfile("Figtree-Semibold") then
         writefile("Figtree-Semibold", game:HttpGet("https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/Figtree-SemiBold.ttf"))
     end
-    
+
     local fontData = {
         name = "figtree-Semibold",
         faces = {
@@ -110,7 +108,7 @@ local successLoad, errLoad = pcall(function()
             }
         }
     }
-    
+
     writefile("nexonix/Assets/figtree-Semibold.font", HttpService:JSONEncode(fontData))
     MenuFont = Font.new(getcustomasset("nexonix/Assets/figtree-Semibold.font"))
 end)
@@ -172,29 +170,29 @@ end
 
 local function MakeDraggable(frame, dragHandle)
     local dragging, dragInput, dragStart, startPos
-    
+
     dragHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
-            
+
             local connection
             connection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
-                    connection:Disconnect() 
+                    connection:Disconnect()
                 end
             end)
         end
     end)
-    
+
     dragHandle.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
-    
+
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
@@ -207,7 +205,7 @@ local function toggleDropdownZIndex(dropFrame, btn, isOpen)
     local targetZ = isOpen and 100 or 2
     dropFrame.ZIndex = targetZ
     btn.ZIndex = targetZ
-    
+
     local current = dropFrame.Parent
     while current and not current:IsA("ScrollingFrame") and current.Name ~= "Perplexity_UI" and current.Name ~= "ContentArea" do
         if current:IsA("Frame") or current:IsA("TextButton") then
@@ -217,7 +215,6 @@ local function toggleDropdownZIndex(dropFrame, btn, isOpen)
     end
 end
 
--- // СИСТЕМА УВЕДОМЛЕНИЙ (Сдвиг справа, настраиваемый акцент)
 local NotificationContainer = Instance.new("Frame")
 NotificationContainer.Size = UDim2.new(0, 260, 1, 0)
 NotificationContainer.Position = UDim2.new(1, -280, 0, 20)
@@ -232,61 +229,71 @@ NotifLayout.Parent = NotificationContainer
 
 local function Notify(title, text, duration)
     duration = duration or 3
-    
+
     local notif = Instance.new("Frame")
-    notif.Size = UDim2.new(1, 0, 0, 50)
+    notif.Size = UDim2.new(1, 0, 0, 0)
+    notif.AutomaticSize = Enum.AutomaticSize.Y
     notif.BackgroundColor3 = THEME.SidebarBg
-    notif.BackgroundTransparency = 0.1
-    notif.Position = UDim2.new(1, 10, 0, 0)
-    AddCorner(notif, 4)
+    notif.BackgroundTransparency = 0.05
+    notif.ClipsDescendants = true
+    notif.ZIndex = 2000
+    AddCorner(notif, 5)
     AddDoubleStroke(notif)
     notif.Parent = NotificationContainer
-    
-    local bar = Instance.new("Frame")
-    bar.Name = "AccentBar"
-    bar.Size = UDim2.new(0, 3, 1, 0)
-    bar.Position = UDim2.new(0, 0, 0, 0)
-    bar.BackgroundColor3 = THEME.Accent
-    AddCorner(bar, 2)
-    bar.Parent = notif
-    
-    local tLabel = Instance.new("TextLabel")
-    tLabel.Name = "TitleLabel"
-    tLabel.Size = UDim2.new(1, -15, 0, 18)
-    tLabel.Position = UDim2.new(0, 10, 0, 6)
-    tLabel.BackgroundTransparency = 1
-    tLabel.Text = title:upper()
-    tLabel.TextColor3 = THEME.Accent
-    tLabel.Font = Enum.Font.GothamBold
-    tLabel.TextSize = 11
-    tLabel.TextXAlignment = Enum.TextXAlignment.Left
-    AddTextStroke(tLabel)
-    ApplyFont(tLabel, 11)
-    tLabel.Parent = notif
-    
-    local dLabel = Instance.new("TextLabel")
-    dLabel.Size = UDim2.new(1, -15, 1, -24)
-    dLabel.Position = UDim2.new(0, 10, 0, 20)
-    dLabel.BackgroundTransparency = 1
-    dLabel.Text = text
-    dLabel.TextColor3 = THEME.Text
-    dLabel.Font = Enum.Font.Gotham
-    dLabel.TextSize = 10
-    dLabel.TextXAlignment = Enum.TextXAlignment.Left
-    dLabel.TextYAlignment = Enum.TextYAlignment.Top
-    dLabel.TextWrapped = true
-    AddTextStroke(dLabel)
-    ApplyFont(dLabel, 10)
-    dLabel.Parent = notif
-    
-    Tween(notif, 0.3, {Position = UDim2.new(0, 0, 0, 0)})
-    
+
+    local accentBar = Instance.new("Frame")
+    accentBar.Name = "AccentBar"
+    accentBar.Size = UDim2.new(0, 3, 1, -12)
+    accentBar.Position = UDim2.new(0, 6, 0, 6)
+    accentBar.BackgroundColor3 = THEME.Accent
+    accentBar.ZIndex = 2001
+    AddCorner(accentBar, 2)
+    accentBar.Parent = notif
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "TitleLabel"
+    titleLabel.Size = UDim2.new(1, -26, 0, 16)
+    titleLabel.Position = UDim2.new(0, 16, 0, 8)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = THEME.Accent
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.ZIndex = 2001
+    AddTextStroke(titleLabel)
+    ApplyFont(titleLabel, 12)
+    titleLabel.Parent = notif
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, -26, 0, 0)
+    textLabel.AutomaticSize = Enum.AutomaticSize.Y
+    textLabel.Position = UDim2.new(0, 16, 0, 26)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = text
+    textLabel.TextColor3 = THEME.Text
+    textLabel.TextWrapped = true
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.TextYAlignment = Enum.TextYAlignment.Top
+    textLabel.ZIndex = 2001
+    AddTextStroke(textLabel)
+    ApplyFont(textLabel, 11)
+    textLabel.Parent = notif
+
+    local bottomPad = Instance.new("UIPadding")
+    bottomPad.PaddingBottom = UDim.new(0, 10)
+    bottomPad.Parent = notif
+
+    notif.Position = UDim2.new(1, 40, 0, 0)
+    Tween(notif, 0.25, {Position = UDim2.new(0, 0, 0, 0)}, Enum.EasingStyle.Back)
+
     task.delay(duration, function()
-        local t = Tween(notif, 0.3, {Position = UDim2.new(1, 10, 0, 0)})
+        if not notif.Parent then return end
+        local t = Tween(notif, 0.2, {Position = UDim2.new(1, 300, 0, 0)})
         t.Completed:Connect(function()
             notif:Destroy()
         end)
     end)
+
+    return notif
 end
 
 local function SetupMenuBackgroundParticles(parent)
@@ -296,10 +303,10 @@ local function SetupMenuBackgroundParticles(parent)
     particleContainer.ClipsDescendants = true
     particleContainer.ZIndex = 1
     particleContainer.Parent = parent
-    
+
     local particles = {}
     local chars = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
-    
+
     for i = 1, 24 do
         local textLabel = Instance.new("TextLabel")
         textLabel.BackgroundTransparency = 1
@@ -309,43 +316,43 @@ local function SetupMenuBackgroundParticles(parent)
         textLabel.Font = Enum.Font.RobotoMono
         textLabel.TextSize = math.random(7, 11)
         textLabel.TextTransparency = math.random(40, 75) / 100
-        textLabel.Position = UDim2.new(math.random(), 0, math.random(-0.4, 0), 0)
+        textLabel.Position = UDim2.new(math.random(), 0, -(math.random(0, 40) / 100), 0)
         textLabel.Size = UDim2.new(0, 14, 0, 100)
         textLabel.ZIndex = 1
         textLabel.Parent = particleContainer
-        
+
         local chainLength = math.random(4, 9)
         local str = ""
         for j = 1, chainLength do
             str = str .. chars[math.random(1, #chars)] .. "\n"
         end
         textLabel.Text = str
-        
+
         local item = {
             Obj = textLabel,
             Speed = math.random(6, 14) / 1000,
             UpdateTimer = 0,
             ChainLength = chainLength
         }
-        
+
         table.insert(particles, item)
         table.insert(allParticles, item)
     end
-    
+
     RunService.RenderStepped:Connect(function(dt)
         if menuVisible and parent.Visible and optSnowEnabled then
             particleContainer.Visible = true
             for _, p in ipairs(particles) do
                 local pos = p.Obj.Position
                 local newY = pos.Y.Scale + p.Speed * (dt * 60)
-                
+
                 if newY > 1 then
                     newY = -0.25
                     p.Obj.Position = UDim2.new(math.random(), 0, newY, 0)
                 else
                     p.Obj.Position = UDim2.new(pos.X.Scale, 0, newY, 0)
                 end
-                
+
                 p.UpdateTimer = p.UpdateTimer + dt
                 if p.UpdateTimer > 0.08 then
                     p.UpdateTimer = 0
@@ -456,25 +463,23 @@ AddTextStroke(hexLabel)
 hexLabel.Parent = ColorpickerWindow
 
 local activeColorpicker = nil
-local openTime = 0
+local openedThisFrame = false
 
 local function updateSV(pos)
     local relativeX = math.clamp((pos.X - svGrid.AbsolutePosition.X) / svGrid.AbsoluteSize.X, 0, 1)
     local relativeY = math.clamp((pos.Y - svGrid.AbsolutePosition.Y) / svGrid.AbsoluteSize.Y, 0, 1)
-    
+
     local s = relativeX
     local v = 1 - relativeY
-    
+
     svKnob.Position = UDim2.new(relativeX, 0, relativeY, 0)
-    
+
     if activeColorpicker then
         activeColorpicker.S = s
         activeColorpicker.V = v
         local color = Color3.fromHSV(activeColorpicker.H, s, v)
+        activeColorpicker.Button.BackgroundColor3 = color
         hexLabel.Text = "HEX: #" .. color:ToHex():upper()
-        if activeColorpicker.SetColor then
-            activeColorpicker.SetColor(color)
-        end
         activeColorpicker.Callback(color)
     end
 end
@@ -482,17 +487,15 @@ end
 local function updateHue(pos)
     local relativeY = math.clamp((pos.Y - hueSlider.AbsolutePosition.Y) / hueSlider.AbsoluteSize.Y, 0, 1)
     local h = relativeY
-    
+
     hueKnob.Position = UDim2.new(0.5, 0, relativeY, 0)
     svGrid.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
-    
+
     if activeColorpicker then
         activeColorpicker.H = h
         local color = Color3.fromHSV(h, activeColorpicker.S, activeColorpicker.V)
+        activeColorpicker.Button.BackgroundColor3 = color
         hexLabel.Text = "HEX: #" .. color:ToHex():upper()
-        if activeColorpicker.SetColor then
-            activeColorpicker.SetColor(color)
-        end
         activeColorpicker.Callback(color)
     end
 end
@@ -536,25 +539,15 @@ end)
 UserInputService.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         if ColorpickerWindow.Visible then
-            if os.clock() - openTime < 0.1 then return end
-            
+            if openedThisFrame then return end
+
             local mPos = UserInputService:GetMouseLocation()
             local wPos = ColorpickerWindow.AbsolutePosition
             local wSize = ColorpickerWindow.AbsoluteSize
-            
+
             local inside = mPos.X >= wPos.X and mPos.X <= wPos.X + wSize.X and
                            mPos.Y >= wPos.Y and mPos.Y <= wPos.Y + wSize.Y
-            
-            local cpBtnInside = false
-            if activeColorpicker and activeColorpicker.Button then
-                local btn = activeColorpicker.Button
-                local bPos = btn.AbsolutePosition
-                local bSize = btn.AbsoluteSize
-                cpBtnInside = mPos.X >= bPos.X and mPos.X <= bPos.X + bSize.X and
-                              mPos.Y >= bPos.Y and mPos.Y <= bPos.Y + bSize.Y
-            end
-            
-            if not inside and not cpBtnInside then
+            if not inside then
                 ColorpickerWindow.Visible = false
             end
         end
@@ -576,11 +569,8 @@ Perplexity.Presets = {
 
 function Perplexity.new(titleText)
     local self = setmetatable({}, Perplexity)
-    Window = self 
-    
-    self.ScreenGui = ScreenGui
-    getgenv().Perplexity = self
-    
+    Window = self
+
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = UDim2.new(0, 835, 0, 520)
     self.MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -588,7 +578,7 @@ function Perplexity.new(titleText)
     self.MainFrame.BackgroundTransparency = 1
     self.MainFrame.ClipsDescendants = true
     self.MainFrame.Parent = ScreenGui
-    
+
     local BgFrame = Instance.new("Frame")
     BgFrame.Size = UDim2.new(1, 0, 1, 0)
     BgFrame.BackgroundColor3 = THEME.Background
@@ -596,11 +586,11 @@ function Perplexity.new(titleText)
     AddCorner(BgFrame, 6)
     AddDoubleStroke(BgFrame)
     BgFrame.Parent = self.MainFrame
-    
+
     SetupMenuBackgroundParticles(self.MainFrame)
-    
+
     local Sidebar = Instance.new("Frame")
-    Sidebar.Size = UDim2.new(0, 210, 1, -20) 
+    Sidebar.Size = UDim2.new(0, 210, 1, -20)
     Sidebar.Position = UDim2.new(0, 10, 0, 10)
     Sidebar.BackgroundColor3 = THEME.SidebarBg
     Sidebar.BackgroundTransparency = 0.12
@@ -608,13 +598,13 @@ function Perplexity.new(titleText)
     AddCorner(Sidebar, 4)
     AddDoubleStroke(Sidebar)
     Sidebar.Parent = self.MainFrame
-    
+
     local LogoContainer = Instance.new("Frame")
     LogoContainer.Size = UDim2.new(1, 0, 0, 40)
     LogoContainer.BackgroundTransparency = 1
     LogoContainer.ZIndex = 3
     LogoContainer.Parent = Sidebar
-    
+
     local TitleText = Instance.new("TextLabel")
     TitleText.Size = UDim2.new(1, -20, 1, 0)
     TitleText.Position = UDim2.new(0, 15, 0, 0)
@@ -629,9 +619,9 @@ function Perplexity.new(titleText)
     ApplyFont(TitleText, 14)
     TitleText.Parent = LogoContainer
     TitleTextLabel = TitleText
-    
+
     MakeDraggable(self.MainFrame, LogoContainer)
-    
+
     local SearchFrame = Instance.new("Frame")
     SearchFrame.Size = UDim2.new(1, -20, 0, 20)
     SearchFrame.Position = UDim2.new(0, 10, 0, 40)
@@ -640,7 +630,7 @@ function Perplexity.new(titleText)
     AddCorner(SearchFrame, 4)
     AddDoubleStroke(SearchFrame)
     SearchFrame.Parent = Sidebar
-    
+
     self.SearchInput = Instance.new("TextBox")
     self.SearchInput.Size = UDim2.new(1, -10, 1, 0)
     self.SearchInput.Position = UDim2.new(0, 5, 0, 0)
@@ -656,7 +646,7 @@ function Perplexity.new(titleText)
     AddTextStroke(self.SearchInput)
     ApplyFont(self.SearchInput, 11)
     self.SearchInput.Parent = SearchFrame
-    
+
     self.TabButtonContainer = Instance.new("ScrollingFrame")
     self.TabButtonContainer.Size = UDim2.new(1, -10, 1, -100)
     self.TabButtonContainer.Position = UDim2.new(0, 5, 0, 80)
@@ -666,23 +656,23 @@ function Perplexity.new(titleText)
     self.TabButtonContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
     self.TabButtonContainer.ZIndex = 3
     self.TabButtonContainer.Parent = Sidebar
-    
+
     local tabLayout = Instance.new("UIListLayout")
     tabLayout.FillDirection = Enum.FillDirection.Vertical
     tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     tabLayout.Padding = UDim.new(0, 3)
     tabLayout.Parent = self.TabButtonContainer
-    
+
     self.ContentArea = Instance.new("Frame")
-    self.ContentArea.Size = UDim2.new(1, -240, 1, -20) 
+    self.ContentArea.Size = UDim2.new(1, -240, 1, -20)
     self.ContentArea.Position = UDim2.new(0, 230, 0, 10)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.ZIndex = 2
     self.ContentArea.Parent = self.MainFrame
-    
+
     self.Tabs = {}
     self.ActiveTab = nil
-    
+
     self.SearchInput:GetPropertyChangedSignal("Text"):Connect(function()
         if self.ActiveTab then
             local query = self.SearchInput.Text:lower()
@@ -700,19 +690,19 @@ function Perplexity.new(titleText)
             end
         end
     end)
-    
+
     return self
 end
 
 function Perplexity:Toggle(state)
     menuVisible = state
     self.MainFrame.Visible = state
-    
+
     local MenuBlur = Lighting:FindFirstChild("Perplexity_Blur")
     if MenuBlur then
         MenuBlur.Enabled = state
     end
-    
+
     pcall(function()
         UserInputService.MouseIconEnabled = state
         if state and mouse then
@@ -728,16 +718,16 @@ function Perplexity:CreateTab(name)
         Name = name,
         Sections = {}
     }
-    
+
     tab.Button = Instance.new("TextButton")
     tab.Button.Size = UDim2.new(1, -10, 0, 30)
     tab.Button.BackgroundTransparency = 1
-    tab.Button.Text = "" 
+    tab.Button.Text = ""
     tab.Button.AutoButtonColor = false
     tab.Button.ZIndex = 3
     tab.Button.Parent = self.TabButtonContainer
     AddCorner(tab.Button, 4)
-    
+
     local tabLabel = Instance.new("TextLabel")
     tabLabel.Size = UDim2.new(1, -24, 1, 0)
     tabLabel.Position = UDim2.new(0, 24, 0, 0)
@@ -749,31 +739,29 @@ function Perplexity:CreateTab(name)
     AddTextStroke(tabLabel)
     ApplyFont(tabLabel, 12)
     tabLabel.Parent = tab.Button
-    
-    tab.Label = tabLabel
-    
+
     local hoverBg = Instance.new("Frame")
     hoverBg.Size = UDim2.new(1, 0, 1, 0)
     hoverBg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     hoverBg.BackgroundTransparency = 1
     hoverBg.ZIndex = 0
-    hoverBg.ClipsDescendants = true 
+    hoverBg.ClipsDescendants = true
     AddCorner(hoverBg, 4)
     hoverBg.Parent = tab.Button
-    
+
     local hoverGlow = Instance.new("ImageLabel")
-    hoverGlow.Size = UDim2.new(0, 110, 0, 110) 
+    hoverGlow.Size = UDim2.new(0, 110, 0, 110)
     hoverGlow.AnchorPoint = Vector2.new(0.5, 0.5)
     hoverGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
     hoverGlow.BackgroundTransparency = 1
-    hoverGlow.Image = "rbxassetid://10822615828" 
+    hoverGlow.Image = "rbxassetid://10822615828"
     hoverGlow.ImageColor3 = THEME.Accent
-    hoverGlow.ImageTransparency = 1 
+    hoverGlow.ImageTransparency = 1
     hoverGlow.ZIndex = 1
     hoverGlow.Parent = hoverBg
-    
+
     table.insert(allHoverGlows, hoverGlow)
-    
+
     local indicator = Instance.new("Frame")
     indicator.Size = UDim2.new(0, 0, 0.5, 0)
     indicator.Position = UDim2.new(0, 8, 0.25, 0)
@@ -782,14 +770,14 @@ function Perplexity:CreateTab(name)
     indicator.Visible = false
     indicator.Parent = tab.Button
     AddCorner(indicator, 2)
-    
+
     tab.Frame = Instance.new("Frame")
     tab.Frame.Size = UDim2.new(1, 0, 1, 0)
     tab.Frame.BackgroundTransparency = 1
     tab.Frame.Visible = false
     tab.Frame.ZIndex = 2
     tab.Frame.Parent = self.TabContentContainer or self.ContentArea
-    
+
     tab.Columns = {}
     for i = 1, 2 do
         local col = Instance.new("ScrollingFrame")
@@ -801,19 +789,20 @@ function Perplexity:CreateTab(name)
         col.CanvasSize = UDim2.new(0, 0, 0, 0)
         col.AutomaticCanvasSize = Enum.AutomaticSize.Y
         col.Parent = tab.Frame
-        
+
         local colList = Instance.new("UIListLayout")
         colList.SortOrder = Enum.SortOrder.LayoutOrder
         colList.Padding = UDim.new(0, 10)
         colList.Parent = col
-        
+
         tab.Columns[i] = col
     end
     tab.Columns[3] = tab.Columns[2]
-    
+
     tab.Indicator = indicator
+    tab.Label = tabLabel
     table.insert(allTabs, tab)
-    
+
     tab.SetTabState = function(active)
         if active then
             indicator.Visible = true
@@ -831,23 +820,23 @@ function Perplexity:CreateTab(name)
             Tween(hoverBg, 0.2, {BackgroundTransparency = 1})
         end
     end
-    
+
     tab.Button.MouseEnter:Connect(function()
         if self.ActiveTab ~= tab then
             Tween(tabLabel, 0.1, {TextColor3 = THEME.Text})
             Tween(hoverBg, 0.1, {BackgroundTransparency = 0.97})
         end
-        Tween(hoverGlow, 0.15, {ImageTransparency = 0.88}) 
+        Tween(hoverGlow, 0.15, {ImageTransparency = 0.88})
     end)
-    
+
     tab.Button.MouseLeave:Connect(function()
         if self.ActiveTab ~= tab then
             Tween(tabLabel, 0.1, {TextColor3 = THEME.TextMuted})
             Tween(hoverBg, 0.1, {BackgroundTransparency = 1})
         end
-        Tween(hoverGlow, 0.15, {ImageTransparency = 1}) 
+        Tween(hoverGlow, 0.15, {ImageTransparency = 1})
     end)
-    
+
     tab.Button.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             local relativeX = input.Position.X - tab.Button.AbsolutePosition.X
@@ -855,32 +844,32 @@ function Perplexity:CreateTab(name)
             Tween(hoverGlow, 0.08, {Position = UDim2.new(0, relativeX, 0, relativeY)})
         end
     end)
-    
+
     tab.Button.MouseButton1Click:Connect(function()
         if self.ActiveTab == tab then return end
-        
+
         local prevTab = self.ActiveTab
         self.ActiveTab = tab
-        
+
         if prevTab then
             prevTab.SetTabState(false)
             prevTab.Frame.Visible = false
         end
-        
+
         self.SearchInput.Text = ""
         tab.Frame.Visible = true
         tab.SetTabState(true)
-        
+
         tab.Frame.Position = UDim2.new(0, 0, 0, 8)
         Tween(tab.Frame, 0.15, {Position = UDim2.new(0, 0, 0, 0)})
     end)
-    
+
     if not self.ActiveTab then
         tab.SetTabState(true)
         tab.Frame.Visible = true
         self.ActiveTab = tab
     end
-    
+
     function tab:CreateSection(title, columnIndex)
         local targetColIndex = (columnIndex == 3) and 2 or ((columnIndex == 2) and 2 or 1)
         local col = tab.Columns[targetColIndex]
@@ -888,9 +877,9 @@ function Perplexity:CreateTab(name)
             Elements = {},
             SubTabs = {},
             ActiveSubTab = nil,
-            ElementCount = 0 
+            ElementCount = 0
         }
-        
+
         section.Frame = Instance.new("Frame")
         section.Frame.Size = UDim2.new(1, 0, 0, 24)
         section.Frame.AutomaticSize = Enum.AutomaticSize.Y
@@ -900,19 +889,19 @@ function Perplexity:CreateTab(name)
         AddCorner(section.Frame, 6)
         AddDoubleStroke(section.Frame)
         section.Frame.Parent = col
-        
+
         local secLayout = Instance.new("UIListLayout")
-        secLayout.SortOrder = Enum.SortOrder.LayoutOrder 
+        secLayout.SortOrder = Enum.SortOrder.LayoutOrder
         secLayout.Padding = UDim.new(0, 8)
         secLayout.Parent = section.Frame
-        
+
         local padding = Instance.new("UIPadding")
         padding.PaddingTop = UDim.new(0, 10)
         padding.PaddingBottom = UDim.new(0, 10)
         padding.PaddingLeft = UDim.new(0, 12)
         padding.PaddingRight = UDim.new(0, 12)
         padding.Parent = section.Frame
-        
+
         section.TitleLabel = Instance.new("TextLabel")
         section.TitleLabel.Size = UDim2.new(1, 0, 0, 16)
         section.TitleLabel.BackgroundTransparency = 1
@@ -921,14 +910,14 @@ function Perplexity:CreateTab(name)
         section.TitleLabel.Font = Enum.Font.GothamBold
         section.TitleLabel.TextSize = 12
         section.TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        section.TitleLabel.LayoutOrder = -100 
+        section.TitleLabel.LayoutOrder = -100
         section.TitleLabel.ZIndex = 2
         AddTextStroke(section.TitleLabel)
         ApplyFont(section.TitleLabel, 12)
         section.TitleLabel.Parent = section.Frame
-        
+
         table.insert(allSectionTitles, section.TitleLabel)
-        
+
         function section:CreateSubTab(name)
             local subTab = {
                 Name = name,
@@ -936,22 +925,22 @@ function Perplexity:CreateTab(name)
                 Button = nil,
                 Underline = nil
             }
-            
+
             if not section.SubTabsHeader then
                 section.SubTabsHeader = Instance.new("Frame")
                 section.SubTabsHeader.Size = UDim2.new(1, 0, 0, 16)
                 section.SubTabsHeader.BackgroundTransparency = 1
                 section.SubTabsHeader.ZIndex = 2
-                section.SubTabsHeader.LayoutOrder = -50 
+                section.SubTabsHeader.LayoutOrder = -50
                 section.SubTabsHeader.Parent = section.Frame
-                
+
                 local headerLayout = Instance.new("UIListLayout")
                 headerLayout.FillDirection = Enum.FillDirection.Horizontal
                 headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
                 headerLayout.Padding = UDim.new(0, 10)
                 headerLayout.Parent = section.SubTabsHeader
             end
-            
+
             subTab.Button = Instance.new("TextButton")
             subTab.Button.Size = UDim2.new(0, 0, 1, 0)
             subTab.Button.AutomaticSize = Enum.AutomaticSize.X
@@ -962,8 +951,9 @@ function Perplexity:CreateTab(name)
             subTab.Button.TextSize = 11
             subTab.Button.ZIndex = 3
             subTab.Button.Parent = section.SubTabsHeader
+            ApplyFont(subTab.Button, 11)
             AddTextStroke(subTab.Button)
-            
+
             subTab.Underline = Instance.new("Frame")
             subTab.Underline.Size = UDim2.new(1, 0, 0, 1.2)
             subTab.Underline.Position = UDim2.new(0, 0, 1, -1)
@@ -971,7 +961,7 @@ function Perplexity:CreateTab(name)
             subTab.Underline.Visible = false
             subTab.Underline.ZIndex = 3
             subTab.Underline.Parent = subTab.Button
-            
+
             subTab.Container = Instance.new("Frame")
             subTab.Container.Size = UDim2.new(1, 0, 0, 0)
             subTab.Container.AutomaticSize = Enum.AutomaticSize.Y
@@ -979,61 +969,69 @@ function Perplexity:CreateTab(name)
             subTab.Container.Visible = false
             subTab.Container.ZIndex = 2
             subTab.Container.Parent = section.Frame
-            
+
             local containerLayout = Instance.new("UIListLayout")
             containerLayout.SortOrder = Enum.SortOrder.LayoutOrder
             containerLayout.Padding = UDim.new(0, 8)
             containerLayout.Parent = subTab.Container
-            
+
             subTab.Button.MouseButton1Click:Connect(function()
                 if section.ActiveSubTab == subTab then return end
-                
+
                 if section.ActiveSubTab then
                     section.ActiveSubTab.Container.Visible = false
                     section.ActiveSubTab.Underline.Visible = false
                     section.ActiveSubTab.Button.TextColor3 = THEME.TextMuted
                 end
-                
+
                 section.ActiveSubTab = subTab
                 subTab.Container.Visible = true
                 subTab.Underline.Visible = true
                 subTab.Button.TextColor3 = THEME.Text
             end)
-            
+
             if not section.ActiveSubTab then
                 section.ActiveSubTab = subTab
                 subTab.Container.Visible = true
                 subTab.Underline.Visible = true
                 subTab.Button.TextColor3 = THEME.Text
             end
-            
+
             function subTab:CreateCheckbox(name, default, callback)
                 return section:CreateCheckboxInternal(name, default, callback, subTab.Container)
             end
-            
+
             function subTab:CreateSlider(name, min, max, default, callback)
                 return section:CreateSliderInternal(name, min, max, default, callback, subTab.Container)
             end
-            
+
             function subTab:CreateDropdown(name, list, default, callback)
                 return section:CreateDropdownInternal(name, list, default, callback, subTab.Container)
             end
-            
+
             function subTab:CreateKeybind(name, default, callback)
                 return section:CreateKeybindInternal(name, default, callback, subTab.Container)
             end
-            
+
             function subTab:CreateButton(name, callback)
                 return section:CreateButtonInternal(name, callback, subTab.Container)
             end
-            
+
+            function subTab:CreateLabel(text)
+                return section:CreateLabelInternal(text, subTab.Container)
+            end
+
+            function subTab:CreateTextbox(name, placeholder, default, callback)
+                return section:CreateTextboxInternal(name, placeholder, default, callback, subTab.Container)
+            end
+
             table.insert(allSubTabs, subTab)
             return subTab
         end
-        
+
         function section:CreateButtonInternal(name, callback, parent)
             parent = parent or section.Frame
-            
+
             section.ElementCount = section.ElementCount + 1
             local btnFrame = Instance.new("Frame")
             btnFrame.Size = UDim2.new(1, 0, 0, 24)
@@ -1041,7 +1039,7 @@ function Perplexity:CreateTab(name)
             btnFrame.ZIndex = 2
             btnFrame.LayoutOrder = section.ElementCount
             btnFrame.Parent = parent
-            
+
             local btn = Instance.new("TextButton")
             btn.Size = UDim2.new(1, 0, 1, 0)
             btn.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
@@ -1055,14 +1053,14 @@ function Perplexity:CreateTab(name)
             local btnStroke = AddStroke(btn, THEME.Border, 1)
             ApplyFont(btn, 11)
             btn.Parent = btnFrame
-            
+
             btn.MouseEnter:Connect(function()
                 Tween(btnStroke, 0.1, {Color = THEME.Accent})
             end)
             btn.MouseLeave:Connect(function()
                 Tween(btnStroke, 0.1, {Color = THEME.Border})
             end)
-            
+
             btn.MouseButton1Click:Connect(function()
                 Tween(btn, 0.05, {BackgroundColor3 = THEME.Accent})
                 task.delay(0.05, function()
@@ -1072,26 +1070,26 @@ function Perplexity:CreateTab(name)
                     pcall(callback)
                 end)
             end)
-            
+
             table.insert(section.Elements, {Name = name, Frame = btnFrame})
             return btn
         end
         function section:CreateButton(name, callback)
             return section:CreateButtonInternal(name, callback, section.Frame)
         end
-        
+
         function section:CreateCheckboxInternal(name, default, callback, parent)
             parent = parent or section.Frame
             local checkbox = {State = default or false}
-            
+
             section.ElementCount = section.ElementCount + 1
             local boxFrame = Instance.new("Frame")
-            boxFrame.Size = UDim2.new(1, 0, 0, 22) 
+            boxFrame.Size = UDim2.new(1, 0, 0, 22)
             boxFrame.BackgroundTransparency = 1
             boxFrame.ZIndex = 2
             boxFrame.LayoutOrder = section.ElementCount
             boxFrame.Parent = parent
-            
+
             local clickContainer = Instance.new("TextButton")
             clickContainer.Size = UDim2.new(1, 0, 1, 0)
             clickContainer.BackgroundTransparency = 1
@@ -1100,34 +1098,31 @@ function Perplexity:CreateTab(name)
             clickContainer.AutoButtonColor = false
             clickContainer.ZIndex = 2
             clickContainer.Parent = boxFrame
-            
+
             local indicator = Instance.new("Frame")
-            -- Увеличен размер с 12 до 14 для чистоты отрисовки на всех разрешениях
-            indicator.Size = UDim2.new(0, 14, 0, 14)
-            indicator.Position = UDim2.new(0, 0, 0.5, -7) 
+            indicator.Size = UDim2.new(0, 12, 0, 12)
+            indicator.Position = UDim2.new(0, 0, 0.5, -6)
             indicator.BackgroundColor3 = checkbox.State and THEME.Accent or Color3.fromRGB(34, 34, 46)
             indicator.ZIndex = 2
             AddCorner(indicator, 2)
             local indStroke = AddStroke(indicator, Color3.fromRGB(56, 56, 74), 1)
             indicator.Parent = clickContainer
-            
+
             local dot = Instance.new("ImageLabel")
             dot.AnchorPoint = Vector2.new(0.5, 0.5)
             dot.Position = UDim2.new(0.5, 0, 0.5, 0)
             dot.Size = checkbox.State and UDim2.new(1, -2, 1, -2) or UDim2.new(0, 0, 0, 0)
-            -- Обновлено на валидную современную иконку-галочку Lucide
-            dot.Image = "rbxassetid://10709790644"
+            dot.Image = "rbxassetid://3944680095"
             dot.ImageColor3 = Color3.fromRGB(255, 255, 255)
             dot.ScaleType = Enum.ScaleType.Fit
             dot.BackgroundTransparency = 1
             dot.ImageTransparency = checkbox.State and 0 or 1
             dot.ZIndex = 3
             dot.Parent = indicator
-            
+
             local label = Instance.new("TextLabel")
-            -- Сдвинуто вправо, чтобы соответствовать размеру 14px у чекбокса
-            label.Size = UDim2.new(1, -20, 1, 0)
-            label.Position = UDim2.new(0, 20, 0, 0)
+            label.Size = UDim2.new(1, -18, 1, 0)
+            label.Position = UDim2.new(0, 18, 0, 0)
             label.BackgroundTransparency = 1
             label.Text = name
             label.TextColor3 = checkbox.State and THEME.Text or THEME.TextMuted
@@ -1135,21 +1130,21 @@ function Perplexity:CreateTab(name)
             label.TextSize = 12
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.TextTruncate = Enum.TextTruncate.AtEnd
-            label.ZIndex = 1 
+            label.ZIndex = 1
             label.Active = false
             AddTextStroke(label)
             ApplyFont(label, 12)
             label.Parent = clickContainer
-            
+
             local subElements = Instance.new("Frame")
-            subElements.Size = UDim2.new(0, 0, 1, 0) 
+            subElements.Size = UDim2.new(0, 0, 1, 0)
             subElements.AutomaticSize = Enum.AutomaticSize.X
             subElements.Position = UDim2.new(1, 0, 0, 0)
-            subElements.AnchorPoint = Vector2.new(1, 0) 
+            subElements.AnchorPoint = Vector2.new(1, 0)
             subElements.BackgroundTransparency = 1
             subElements.ZIndex = 4
             subElements.Parent = boxFrame
-            
+
             local subLayout = Instance.new("UIListLayout")
             subLayout.FillDirection = Enum.FillDirection.Horizontal
             subLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1157,23 +1152,16 @@ function Perplexity:CreateTab(name)
             subLayout.VerticalAlignment = Enum.VerticalAlignment.Center
             subLayout.Padding = UDim.new(0, 6)
             subLayout.Parent = subElements
-            
+
             local function updateLayout()
                 local subWidth = subElements.AbsoluteSize.X
                 local paddingOffset = (subWidth > 0) and (subWidth + 6) or 0
                 clickContainer.Size = UDim2.new(1, -paddingOffset, 1, 0)
             end
-            
             subElements:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout)
-            subElements.ChildAdded:Connect(function(child)
-                if child:IsA("GuiObject") then
-                    child:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout)
-                end
-                updateLayout()
-            end)
             task.spawn(updateLayout)
-            
-            local function update(init)
+
+            local function update()
                 if checkbox.State then
                     Tween(indicator, 0.15, {BackgroundColor3 = THEME.Accent})
                     Tween(indStroke, 0.15, {Color = THEME.Accent})
@@ -1185,16 +1173,14 @@ function Perplexity:CreateTab(name)
                     Tween(dot, 0.15, {Size = UDim2.new(0, 0, 0, 0), ImageTransparency = 1})
                     Tween(label, 0.15, {TextColor3 = THEME.TextMuted})
                 end
-                
+
                 SaveFlags[name] = checkbox.State
-                
-                if not init then
-                    task.spawn(function()
-                        pcall(callback, checkbox.State)
-                    end)
-                end
+
+                task.spawn(function()
+                    pcall(callback, checkbox.State)
+                end)
             end
-            
+
             clickContainer.MouseEnter:Connect(function()
                 Tween(indStroke, 0.1, {Color = THEME.Accent})
             end)
@@ -1203,15 +1189,15 @@ function Perplexity:CreateTab(name)
                     Tween(indStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
                 end
             end)
-            
+
             clickContainer.MouseButton1Click:Connect(function()
                 checkbox.State = not checkbox.State
                 update()
             end)
-            
+
             function checkbox:CreateKeybind(default, cb)
                 local kb = {Key = default or "None", Binding = false}
-                
+
                 local bindBtn = Instance.new("TextButton")
                 bindBtn.Size = UDim2.new(0, 0, 0, 16)
                 bindBtn.AutomaticSize = Enum.AutomaticSize.X
@@ -1226,25 +1212,25 @@ function Perplexity:CreateTab(name)
                 AddCorner(bindBtn, 3)
                 local kbStroke = AddStroke(bindBtn, Color3.fromRGB(56, 56, 74), 1)
                 bindBtn.Parent = subElements
-                
+
                 local btnPadding = Instance.new("UIPadding")
                 btnPadding.PaddingLeft = UDim.new(0, 5)
                 btnPadding.PaddingRight = UDim.new(0, 5)
                 btnPadding.Parent = bindBtn
-                
+
                 local sizeConstraint = Instance.new("UISizeConstraint")
                 sizeConstraint.MinSize = Vector2.new(35, 0)
                 sizeConstraint.MaxSize = Vector2.new(90, 16)
                 sizeConstraint.Parent = bindBtn
-                
+
                 table.insert(allKeybinds, bindBtn)
-                
+
                 local function setKey(keyName)
                     kb.Key = tostring(keyName)
                     bindBtn.Text = kb.Key
                     SaveFlags[name .. "_key"] = kb.Key
                 end
-                
+
                 bindBtn.MouseEnter:Connect(function()
                     Tween(kbStroke, 0.1, {Color = THEME.Accent})
                 end)
@@ -1253,13 +1239,13 @@ function Perplexity:CreateTab(name)
                         Tween(kbStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
                     end
                 end)
-                
+
                 bindBtn.MouseButton1Click:Connect(function()
                     if kb.Binding then return end
                     kb.Binding = true
                     bindBtn.Text = "..."
                     Tween(kbStroke, 0.1, {Color = THEME.Accent})
-                    
+
                     local conn
                     conn = UserInputService.InputBegan:Connect(function(inKey)
                         if inKey.UserInputType == Enum.UserInputType.Keyboard then
@@ -1277,7 +1263,7 @@ function Perplexity:CreateTab(name)
                         end
                     end)
                 end)
-                
+
                 Flags[name .. "_key"] = {
                     Set = function(val)
                         setKey(val)
@@ -1286,14 +1272,14 @@ function Perplexity:CreateTab(name)
                         return kb.Key
                     end
                 }
-                
+
                 SaveFlags[name .. "_key"] = kb.Key
                 return kb
             end
-            
+
             function checkbox:CreateColorpicker(default, cb)
                 local cp = {Value = default or Color3.fromRGB(255, 255, 255)}
-                
+
                 local cpBtn = Instance.new("TextButton")
                 cpBtn.Size = UDim2.new(0, 18, 0, 11)
                 cpBtn.BackgroundColor3 = cp.Value
@@ -1303,54 +1289,50 @@ function Perplexity:CreateTab(name)
                 AddCorner(cpBtn, 2)
                 local cpStroke = AddStroke(cpBtn, Color3.fromRGB(56, 56, 74), 1)
                 cpBtn.Parent = subElements
-                
+
                 local function setColor(colorValue)
                     cp.Value = colorValue
                     cpBtn.BackgroundColor3 = colorValue
                     SaveFlags[name .. "_color"] = colorValue:ToHex()
                 end
-                
+
                 cpBtn.MouseEnter:Connect(function()
                     Tween(cpStroke, 0.1, {Color = THEME.Accent})
                 end)
                 cpBtn.MouseLeave:Connect(function()
                     Tween(cpStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
                 end)
-                
+
                 cpBtn.MouseButton1Click:Connect(function()
-                    if ColorpickerWindow.Visible and activeColorpicker and activeColorpicker.Button == cpBtn then
-                        ColorpickerWindow.Visible = false
-                        return
-                    end
-                    
-                    openTime = os.clock()
+                    openedThisFrame = true
                     activeColorpicker = {
                         H = 0, S = 1, V = 1,
                         Button = cpBtn,
-                        Callback = cb,
-                        SetColor = setColor
+                        Callback = cb
                     }
-                    
+
                     local h, s, v = cp.Value:ToHSV()
                     activeColorpicker.H = h
                     activeColorpicker.S = s
                     activeColorpicker.V = v
-                    
+
                     local screenX = cpBtn.AbsolutePosition.X - 140
                     if screenX < 20 then
                         screenX = cpBtn.AbsolutePosition.X + cpBtn.AbsoluteSize.X + 10
                     end
-                    
-                    local insetY = ScreenGui.IgnoreGuiInset and GuiService:GetGuiInset().Y or 0
-                    ColorpickerWindow.Position = UDim2.new(0, screenX, 0, cpBtn.AbsolutePosition.Y + insetY)
+
+                    ColorpickerWindow.Position = UDim2.new(0, screenX, 0, cpBtn.AbsolutePosition.Y)
                     ColorpickerWindow.Visible = true
-                    
+
                     svGrid.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
                     svKnob.Position = UDim2.new(s, 0, 1 - v, 0)
                     hueKnob.Position = UDim2.new(0.5, 0, h, 0)
                     hexLabel.Text = "HEX: #" .. cp.Value:ToHex():upper()
+
+                    task.wait()
+                    openedThisFrame = false
                 end)
-                
+
                 Flags[name .. "_color"] = {
                     Set = function(val)
                         setColor(Color3.fromHex(val))
@@ -1359,11 +1341,11 @@ function Perplexity:CreateTab(name)
                         return cp.Value:ToHex()
                     end
                 }
-                
+
                 SaveFlags[name .. "_color"] = cp.Value:ToHex()
                 return cp
             end
-            
+
             Flags[name] = {
                 Set = function(val)
                     checkbox.State = val
@@ -1373,20 +1355,20 @@ function Perplexity:CreateTab(name)
                     return checkbox.State
                 end
             }
-            
-            table.insert(allCheckboxes, {Indicator = indicator, Label = label, CheckboxObj = checkbox, Stroke = indStroke})
-            update(true)
+
+            table.insert(allCheckboxes, {Indicator = indicator, Label = label, CheckboxObj = checkbox})
+            SaveFlags[name] = checkbox.State
             table.insert(section.Elements, {Name = name, Frame = boxFrame})
             return checkbox
         end
         function section:CreateCheckbox(name, default, callback)
             return section:CreateCheckboxInternal(name, default, callback, section.Frame)
         end
-        
+
         function section:CreateSliderInternal(name, min, max, default, callback, parent)
             parent = parent or section.Frame
             local slider = {Value = default or min}
-            
+
             section.ElementCount = section.ElementCount + 1
             local sliderFrame = Instance.new("Frame")
             sliderFrame.Size = UDim2.new(1, 0, 0, 38)
@@ -1394,7 +1376,7 @@ function Perplexity:CreateTab(name)
             sliderFrame.ZIndex = 2
             sliderFrame.LayoutOrder = section.ElementCount
             sliderFrame.Parent = parent
-            
+
             local title = Instance.new("TextLabel")
             title.Size = UDim2.new(1, -40, 0, 14)
             title.Position = UDim2.new(0, 0, 0, 0)
@@ -1407,7 +1389,7 @@ function Perplexity:CreateTab(name)
             AddTextStroke(title)
             ApplyFont(title, 11)
             title.Parent = sliderFrame
-            
+
             local valueDisplay = Instance.new("TextLabel")
             valueDisplay.Size = UDim2.new(1, 0, 0, 14)
             valueDisplay.Position = UDim2.new(0, 0, 0, 0)
@@ -1419,23 +1401,24 @@ function Perplexity:CreateTab(name)
             AddTextStroke(valueDisplay)
             ApplyFont(valueDisplay, 11)
             valueDisplay.Parent = sliderFrame
-            
+
             local barBg = Instance.new("Frame")
             barBg.Size = UDim2.new(1, 0, 0, 3)
             barBg.Position = UDim2.new(0, 0, 0, 26)
-            barBg.BackgroundColor3 = Color3.fromRGB(34, 34, 46) 
+            barBg.BackgroundColor3 = Color3.fromRGB(34, 34, 46)
             barBg.ZIndex = 2
             AddCorner(barBg, 2)
             barBg.Parent = sliderFrame
-            
+
+            local range = math.max(max - min, 1e-9)
             local barFill = Instance.new("Frame")
-            local initPct = (slider.Value - min) / (max - min)
+            local initPct = (slider.Value - min) / range
             barFill.Size = UDim2.new(initPct, 0, 1, 0)
             barFill.BackgroundColor3 = THEME.Accent
             barFill.ZIndex = 2
             AddCorner(barFill, 2)
             barFill.Parent = barBg
-            
+
             local knob = Instance.new("Frame")
             knob.AnchorPoint = Vector2.new(0.5, 0.5)
             knob.Size = UDim2.new(0, 8, 0, 8)
@@ -1445,22 +1428,22 @@ function Perplexity:CreateTab(name)
             AddCorner(knob, 4)
             AddStroke(knob, Color3.fromRGB(0, 0, 0), 1)
             knob.Parent = barBg
-            
+
             local dragging = false
             local function updateSlider(val)
                 slider.Value = math.clamp(val, min, max)
                 valueDisplay.Text = tostring(slider.Value)
-                
-                local relativeX = (slider.Value - min) / (max - min)
+
+                local relativeX = (slider.Value - min) / range
                 barFill.Size = UDim2.new(relativeX, 0, 1, 0)
                 knob.Position = UDim2.new(relativeX, 0, 0.5, 0)
-                
+
                 SaveFlags[name] = slider.Value
                 task.spawn(function()
                     pcall(callback, slider.Value)
                 end)
             end
-            
+
             sliderFrame.Active = true
             sliderFrame.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -1469,20 +1452,20 @@ function Perplexity:CreateTab(name)
                     updateSlider(math.floor(min + (max - min) * relativeX))
                 end
             end)
-            
+
             UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     dragging = false
                 end
             end)
-            
+
             UserInputService.InputChanged:Connect(function(input)
                 if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     local relativeX = math.clamp((input.Position.X - barBg.AbsolutePosition.X) / barBg.AbsoluteSize.X, 0, 1)
                     updateSlider(math.floor(min + (max - min) * relativeX))
                 end
             end)
-            
+
             Flags[name] = {
                 Set = function(val)
                     updateSlider(val)
@@ -1491,7 +1474,7 @@ function Perplexity:CreateTab(name)
                     return slider.Value
                 end
             }
-            
+
             table.insert(allSliders, {BarFill = barFill, ValueDisplay = valueDisplay})
             SaveFlags[name] = slider.Value
             table.insert(section.Elements, {Name = name, Frame = sliderFrame})
@@ -1500,11 +1483,11 @@ function Perplexity:CreateTab(name)
         function section:CreateSlider(name, min, max, default, callback)
             return section:CreateSliderInternal(name, min, max, default, callback, section.Frame)
         end
-        
+
         function section:CreateDropdownInternal(name, list, default, callback, parent)
             parent = parent or section.Frame
             local dropdown = {Selected = default or list[1], Open = false}
-            
+
             section.ElementCount = section.ElementCount + 1
             local dropFrame = Instance.new("Frame")
             dropFrame.Size = UDim2.new(1, 0, 0, 40)
@@ -1512,7 +1495,7 @@ function Perplexity:CreateTab(name)
             dropFrame.ZIndex = 2
             dropFrame.LayoutOrder = section.ElementCount
             dropFrame.Parent = parent
-            
+
             local title = Instance.new("TextLabel")
             title.Size = UDim2.new(1, -145, 1, 0)
             title.Position = UDim2.new(0, 0, 0, 0)
@@ -1524,7 +1507,7 @@ function Perplexity:CreateTab(name)
             AddTextStroke(title)
             ApplyFont(title, 11)
             title.Parent = dropFrame
-            
+
             local btn = Instance.new("TextButton")
             btn.Size = UDim2.new(0, 135, 0, 22)
             btn.Position = UDim2.new(1, -135, 0.5, -11)
@@ -1541,7 +1524,7 @@ function Perplexity:CreateTab(name)
             local btnStroke = AddStroke(btn, Color3.fromRGB(56, 56, 74), 1)
             ApplyFont(btn, 11)
             btn.Parent = dropFrame
-            
+
             local arrow = Instance.new("TextLabel")
             arrow.AnchorPoint = Vector2.new(0.5, 0.5)
             arrow.Size = UDim2.new(0, 12, 0, 12)
@@ -1553,7 +1536,7 @@ function Perplexity:CreateTab(name)
             arrow.TextSize = 12
             arrow.ZIndex = 2
             arrow.Parent = btn
-            
+
             local container = Instance.new("Frame")
             container.Size = UDim2.new(0, 135, 0, 0)
             container.Position = UDim2.new(1, -135, 0, 26)
@@ -1564,13 +1547,13 @@ function Perplexity:CreateTab(name)
             AddCorner(container, 4)
             AddStroke(container, Color3.fromRGB(56, 56, 74), 1)
             container.Parent = dropFrame
-            
+
             local dropLayout = Instance.new("UIListLayout")
             dropLayout.SortOrder = Enum.SortOrder.LayoutOrder
             dropLayout.Parent = container
-            
+
             local targetHeight = #list * 18
-            
+
             local function selectValue(item)
                 dropdown.Selected = item
                 btn.Text = "  " .. item
@@ -1579,7 +1562,7 @@ function Perplexity:CreateTab(name)
                     pcall(callback, item)
                 end)
             end
-            
+
             for index, item in ipairs(list) do
                 local itemBtn = Instance.new("TextButton")
                 itemBtn.Size = UDim2.new(1, 0, 0, 18)
@@ -1594,27 +1577,27 @@ function Perplexity:CreateTab(name)
                 itemBtn.ZIndex = 51
                 ApplyFont(itemBtn, 11)
                 itemBtn.Parent = container
-                
+
                 itemBtn.MouseEnter:Connect(function()
                     Tween(itemBtn, 0.1, {TextColor3 = THEME.Text})
                 end)
                 itemBtn.MouseLeave:Connect(function()
                     Tween(itemBtn, 0.1, {TextColor3 = THEME.TextMuted})
                 end)
-                
+
                 itemBtn.MouseButton1Click:Connect(function()
                     selectValue(item)
                     dropdown.Open = false
-                    toggleDropdownZIndex(dropFrame, btn, false) 
+                    toggleDropdownZIndex(dropFrame, btn, false)
                     Tween(container, 0.15, {Size = UDim2.new(0, 135, 0, 0)})
                     Tween(arrow, 0.15, {Rotation = 0})
                     task.delay(0.15, function() container.Visible = false end)
                 end)
             end
-            
+
             btn.MouseButton1Click:Connect(function()
                 dropdown.Open = not dropdown.Open
-                toggleDropdownZIndex(dropFrame, btn, dropdown.Open) 
+                toggleDropdownZIndex(dropFrame, btn, dropdown.Open)
                 if dropdown.Open then
                     container.Visible = true
                     Tween(container, 0.2, {Size = UDim2.new(0, 135, 0, targetHeight)})
@@ -1622,7 +1605,7 @@ function Perplexity:CreateTab(name)
                 else
                     local t = Tween(container, 0.15, {Size = UDim2.new(0, 135, 0, 0)})
                     Tween(arrow, 0.15, {Rotation = 0})
-                    
+
                     local conn
                     conn = t.Completed:Connect(function()
                         if not dropdown.Open then
@@ -1632,10 +1615,10 @@ function Perplexity:CreateTab(name)
                     end)
                 end
             end)
-            
+
             btn.MouseEnter:Connect(function() Tween(btnStroke, 0.1, {Color = THEME.Accent}) end)
             btn.MouseLeave:Connect(function() Tween(btnStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)}) end)
-            
+
             Flags[name] = {
                 Set = function(val)
                     selectValue(val)
@@ -1644,7 +1627,7 @@ function Perplexity:CreateTab(name)
                     return dropdown.Selected
                 end
             }
-            
+
             table.insert(allDropdownArrows, arrow)
             SaveFlags[name] = dropdown.Selected
             table.insert(section.Elements, {Name = name, Frame = dropFrame})
@@ -1653,11 +1636,11 @@ function Perplexity:CreateTab(name)
         function section:CreateDropdown(name, list, default, callback)
             return section:CreateDropdownInternal(name, list, default, callback, section.Frame)
         end
-        
+
         function section:CreateKeybindInternal(name, default, callback, parent)
             parent = parent or section.Frame
             local keybind = {Key = default or "None", Binding = false}
-            
+
             section.ElementCount = section.ElementCount + 1
             local kbFrame = Instance.new("Frame")
             kbFrame.Size = UDim2.new(1, 0, 0, 22)
@@ -1665,7 +1648,7 @@ function Perplexity:CreateTab(name)
             kbFrame.ZIndex = 2
             kbFrame.LayoutOrder = section.ElementCount
             kbFrame.Parent = parent
-            
+
             local label = Instance.new("TextLabel")
             label.Size = UDim2.new(1, -145, 1, 0)
             label.BackgroundTransparency = 1
@@ -1677,7 +1660,7 @@ function Perplexity:CreateTab(name)
             AddTextStroke(label)
             ApplyFont(label, 12)
             label.Parent = kbFrame
-            
+
             local bindBtn = Instance.new("TextButton")
             bindBtn.AnchorPoint = Vector2.new(1, 0.5)
             bindBtn.Position = UDim2.new(1, 0, 0.5, 0)
@@ -1694,43 +1677,43 @@ function Perplexity:CreateTab(name)
             AddCorner(bindBtn, 3)
             local bindStroke = AddStroke(bindBtn, Color3.fromRGB(56, 56, 74), 1)
             bindBtn.Parent = kbFrame
-            
+
             local btnPadding = Instance.new("UIPadding")
             btnPadding.PaddingLeft = UDim.new(0, 6)
             btnPadding.PaddingRight = UDim.new(0, 6)
             btnPadding.Parent = bindBtn
-            
+
             local sizeConstraint = Instance.new("UISizeConstraint")
             sizeConstraint.MinSize = Vector2.new(40, 0)
             sizeConstraint.MaxSize = Vector2.new(135, 16)
             sizeConstraint.Parent = bindBtn
-            
+
             local function updateLabelSize()
                 local btnWidth = bindBtn.AbsoluteSize.X
                 label.Size = UDim2.new(1, -btnWidth - 8, 1, 0)
             end
             bindBtn:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLabelSize)
             task.spawn(updateLabelSize)
-            
+
             table.insert(allKeybinds, bindBtn)
-            
+
             local function setKey(keyName)
                 keybind.Key = tostring(keyName)
                 bindBtn.Text = keybind.Key
                 SaveFlags[name] = keybind.Key
             end
-            
+
             bindBtn.MouseEnter:Connect(function() Tween(bindStroke, 0.1, {Color = THEME.Accent}) end)
-            bindBtn.MouseLeave:Connect(function() 
-                if not keybind.Binding then Tween(bindStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)}) end 
+            bindBtn.MouseLeave:Connect(function()
+                if not keybind.Binding then Tween(bindStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)}) end
             end)
-            
+
             bindBtn.MouseButton1Click:Connect(function()
                 if keybind.Binding then return end
                 keybind.Binding = true
                 bindBtn.Text = "..."
                 Tween(bindStroke, 0.1, {Color = THEME.Accent})
-                
+
                 local conn
                 conn = UserInputService.InputBegan:Connect(function(inKey)
                     if inKey.UserInputType == Enum.UserInputType.Keyboard then
@@ -1748,7 +1731,7 @@ function Perplexity:CreateTab(name)
                     end
                 end)
             end)
-            
+
             Flags[name] = {
                 Set = function(val)
                     setKey(val)
@@ -1757,7 +1740,7 @@ function Perplexity:CreateTab(name)
                     return keybind.Key
                 end
             }
-            
+
             SaveFlags[name] = keybind.Key
             table.insert(section.Elements, {Name = name, Frame = kbFrame})
             return keybind
@@ -1765,36 +1748,156 @@ function Perplexity:CreateTab(name)
         function section:CreateKeybind(name, default, callback)
             return section:CreateKeybindInternal(name, default, callback, section.Frame)
         end
-        
+
+        function section:CreateLabelInternal(text, parent)
+            parent = parent or section.Frame
+
+            section.ElementCount = section.ElementCount + 1
+            local lblFrame = Instance.new("Frame")
+            lblFrame.Size = UDim2.new(1, 0, 0, 0)
+            lblFrame.AutomaticSize = Enum.AutomaticSize.Y
+            lblFrame.BackgroundTransparency = 1
+            lblFrame.ZIndex = 2
+            lblFrame.LayoutOrder = section.ElementCount
+            lblFrame.Parent = parent
+
+            local lbl = Instance.new("TextLabel")
+            lbl.Size = UDim2.new(1, 0, 0, 0)
+            lbl.AutomaticSize = Enum.AutomaticSize.Y
+            lbl.BackgroundTransparency = 1
+            lbl.Text = text
+            lbl.TextColor3 = THEME.TextMuted
+            lbl.TextWrapped = true
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.ZIndex = 2
+            AddTextStroke(lbl)
+            ApplyFont(lbl, 11)
+            lbl.Parent = lblFrame
+
+            local labelObj = {}
+            function labelObj:SetText(newText)
+                lbl.Text = newText
+            end
+
+            table.insert(section.Elements, {Name = text, Frame = lblFrame})
+            return labelObj
+        end
+        function section:CreateLabel(text)
+            return section:CreateLabelInternal(text, section.Frame)
+        end
+
+        function section:CreateTextboxInternal(name, placeholder, default, callback, parent)
+            parent = parent or section.Frame
+            local textbox = {Value = default or ""}
+
+            section.ElementCount = section.ElementCount + 1
+            local tbFrame = Instance.new("Frame")
+            tbFrame.Size = UDim2.new(1, 0, 0, 22)
+            tbFrame.BackgroundTransparency = 1
+            tbFrame.ZIndex = 2
+            tbFrame.LayoutOrder = section.ElementCount
+            tbFrame.Parent = parent
+
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1, -145, 1, 0)
+            label.BackgroundTransparency = 1
+            label.Text = name
+            label.TextColor3 = THEME.TextMuted
+            label.TextXAlignment = Enum.TextXAlignment.Left
+            label.TextTruncate = Enum.TextTruncate.AtEnd
+            label.ZIndex = 2
+            AddTextStroke(label)
+            ApplyFont(label, 12)
+            label.Parent = tbFrame
+
+            local inputBg = Instance.new("Frame")
+            inputBg.AnchorPoint = Vector2.new(1, 0.5)
+            inputBg.Position = UDim2.new(1, 0, 0.5, 0)
+            inputBg.Size = UDim2.new(0, 135, 0, 18)
+            inputBg.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
+            inputBg.ZIndex = 2
+            AddCorner(inputBg, 4)
+            local inputStroke = AddStroke(inputBg, Color3.fromRGB(56, 56, 74), 1)
+            inputBg.Parent = tbFrame
+
+            local input = Instance.new("TextBox")
+            input.Size = UDim2.new(1, -10, 1, 0)
+            input.Position = UDim2.new(0, 5, 0, 0)
+            input.BackgroundTransparency = 1
+            input.Text = textbox.Value
+            input.PlaceholderText = placeholder or "..."
+            input.PlaceholderColor3 = THEME.TextMuted
+            input.TextColor3 = THEME.Text
+            input.TextXAlignment = Enum.TextXAlignment.Left
+            input.TextTruncate = Enum.TextTruncate.AtEnd
+            input.ClearTextOnFocus = false
+            input.ZIndex = 3
+            ApplyFont(input, 11)
+            input.Parent = inputBg
+
+            input.Focused:Connect(function()
+                Tween(inputStroke, 0.1, {Color = THEME.Accent})
+            end)
+            input.FocusLost:Connect(function(enterPressed)
+                Tween(inputStroke, 0.1, {Color = Color3.fromRGB(56, 56, 74)})
+                textbox.Value = input.Text
+                SaveFlags[name] = textbox.Value
+                task.spawn(function()
+                    pcall(callback, textbox.Value, enterPressed)
+                end)
+            end)
+
+            Flags[name] = {
+                Set = function(val)
+                    input.Text = tostring(val)
+                    textbox.Value = input.Text
+                    SaveFlags[name] = textbox.Value
+                    task.spawn(function()
+                        pcall(callback, textbox.Value, false)
+                    end)
+                end,
+                Get = function()
+                    return textbox.Value
+                end
+            }
+
+            SaveFlags[name] = textbox.Value
+            table.insert(section.Elements, {Name = name, Frame = tbFrame})
+            return textbox
+        end
+        function section:CreateTextbox(name, placeholder, default, callback)
+            return section:CreateTextboxInternal(name, placeholder, default, callback, section.Frame)
+        end
+
         table.insert(tab.Sections, section)
         return section
     end
-    
+
     return tab
 end
 
 local function UpdateBackgroundTheme(accentColor, particleColors)
     THEME.Accent = accentColor
     activeParticleColors = particleColors
-    
+
     pcall(function()
         if Cursor then
             Cursor.ImageColor3 = accentColor
         end
     end)
-    
+
     if TitleTextLabel then
         TitleTextLabel.TextColor3 = accentColor
     end
-    
+
     for _, p in ipairs(allParticles) do
         p.Obj.TextColor3 = particleColors[math.random(1, #activeParticleColors)]
     end
-    
+
     for _, glow in ipairs(allHoverGlows) do
         glow.ImageColor3 = accentColor
     end
-    
+
     if ColorpickerWindow then
         for _, stroke in ipairs(ColorpickerWindow:GetChildren()) do
             if stroke:IsA("UIStroke") then
@@ -1802,42 +1905,37 @@ local function UpdateBackgroundTheme(accentColor, particleColors)
             end
         end
     end
-    
+
     for _, cb in ipairs(allCheckboxes) do
         if cb.CheckboxObj.State then
             cb.Indicator.BackgroundColor3 = THEME.Accent
-            if cb.Stroke then
-                cb.Stroke.Color = THEME.Accent
-            end
         end
     end
-    
+
     for _, sl in ipairs(allSliders) do
         sl.BarFill.BackgroundColor3 = THEME.Accent
         sl.ValueDisplay.TextColor3 = THEME.Accent
     end
-    
+
     for _, kb in ipairs(allKeybinds) do
         kb.TextColor3 = THEME.Accent
     end
-    
+
     for _, arr in ipairs(allDropdownArrows) do
         arr.TextColor3 = THEME.Accent
     end
-    
+
     for _, t in ipairs(allTabs) do
         t.Indicator.BackgroundColor3 = THEME.Accent
-        if Window.ActiveTab == t then
-            if t.Label then
-                t.Label.TextColor3 = THEME.Accent
-            end
+        if Window and Window.ActiveTab == t then
+            t.Label.TextColor3 = THEME.Accent
         end
     end
-    
+
     for _, st in ipairs(allSubTabs) do
         st.Underline.BackgroundColor3 = THEME.Accent
     end
-    
+
     for _, title in ipairs(allSectionTitles) do
         title.TextColor3 = THEME.Accent
     end
@@ -1860,7 +1958,7 @@ local function SaveConfig(slotName)
     pcall(function()
         if not isfolder("perplexity") then makefolder("perplexity") end
         if not isfolder("perplexity/Configs") then makefolder("perplexity/Configs") end
-        
+
         local encoded = HttpService:JSONEncode(SaveFlags)
         writefile("perplexity/Configs/" .. slotName .. ".json", encoded)
         Notify("Configs", "Settings saved to slot: " .. slotName, 3)
@@ -1896,94 +1994,34 @@ function Perplexity:LoadConfig(slotName)
     LoadConfig(slotName)
 end
 
-function Perplexity:CreateSettingsTab()
-    local SettingsTab = self:CreateTab("Settings")
-
-    local ConfigSection = SettingsTab:CreateSection("Configuration Manager", 1)
-    local selectedSlot = "Slot 1"
-
-    ConfigSection:CreateDropdown("Selected Slot", {"Slot 1", "Slot 2", "Slot 3", "Legit", "Rage"}, "Slot 1", function(selected)
-        selectedSlot = selected
-    end)
-
-    ConfigSection:CreateButton("Save Configuration", function()
-        self:SaveConfig(selectedSlot)
-    end)
-
-    ConfigSection:CreateButton("Load Configuration", function()
-        self:LoadConfig(selectedSlot)
-    end)
-
-    local MenuSettings = SettingsTab:CreateSection("Menu Settings", 2)
-
-    MenuSettings:CreateKeybind("Hide / Show Key", "RightShift", function(key)
-        getgenv().toggleKey = key
-        _G.toggleKey = key
-    end)
-
-    local currentPresetColor = Color3.fromRGB(255, 30, 60)
-    local lastCustomColor = Color3.fromRGB(255, 30, 60)
-    local customAccentEnabled = false
-
-    local themeList = {}
-    for themeName, _ in pairs(Perplexity.Presets) do
-        table.insert(themeList, themeName)
-    end
-    table.sort(themeList)
-
-    local ThemeDropdown = MenuSettings:CreateDropdown("Theme Preset", themeList, "Red (Default)", function(selectedName)
-        local selectedColor = Perplexity.Presets[selectedName]
-        if selectedColor then
-            currentPresetColor = selectedColor
-            if not customAccentEnabled then
-                self:UpdateTheme(selectedColor, {
-                    selectedColor,
-                    Color3.fromRGB(selectedColor.R * 255 * 0.4, selectedColor.G * 255 * 0.4, selectedColor.B * 255 * 0.4),
-                    Color3.fromRGB(25, 25, 30)
-                })
-            end
-        end
-    end)
-
-    local CustomThemeColor = MenuSettings:CreateCheckbox("Custom Color Accent", false, function(state)
-        customAccentEnabled = state
-        if state then
-            self:UpdateTheme(lastCustomColor, {
-                lastCustomColor,
-                Color3.fromRGB(lastCustomColor.R * 255 * 0.4, lastCustomColor.G * 255 * 0.4, lastCustomColor.B * 255 * 0.4),
-                Color3.fromRGB(25, 25, 30)
-            })
-        else
-            self:UpdateTheme(currentPresetColor, {
-                currentPresetColor,
-                Color3.fromRGB(currentPresetColor.R * 255 * 0.4, currentPresetColor.G * 255 * 0.4, currentPresetColor.B * 255 * 0.4),
-                Color3.fromRGB(25, 25, 30)
-            })
-        end
-    end)
-
-    CustomThemeColor:CreateColorpicker(Color3.fromRGB(255, 30, 60), function(color)
-        lastCustomColor = color
-        if customAccentEnabled then
-            self:UpdateTheme(color, {
-                color, 
-                Color3.fromRGB(color.R * 255 * 0.4, color.G * 255 * 0.4, color.B * 255 * 0.4),
-                Color3.fromRGB(25, 25, 30)
-            })
-        end
-    end)
-    
-    return SettingsTab
-end
-
 UserInputService.InputBegan:Connect(function(input, processed)
     if UserInputService:GetFocusedTextBox() then return end
-    
-    local currentKey = getgenv().toggleKey or Enum.KeyCode.RightShift
-    if input.KeyCode == currentKey then
-        menuVisible = not menuVisible
-        Window:Toggle(menuVisible)
+
+    if processed then return end
+
+    if input.KeyCode == toggleKey then
+        if Window then
+            menuVisible = not menuVisible
+            Window:Toggle(menuVisible)
+        end
     end
 end)
+
+function Perplexity:SetToggleKey(keyCode)
+    if typeof(keyCode) == "EnumItem" and keyCode.EnumType == Enum.KeyCode then
+        toggleKey = keyCode
+    elseif type(keyCode) == "string" and Enum.KeyCode[keyCode] then
+        toggleKey = Enum.KeyCode[keyCode]
+    end
+end
+
+function Perplexity:Notify(title, text, duration)
+    return Notify(title, text, duration)
+end
+
+getgenv().Perplexity = {
+    ScreenGui = ScreenGui,
+    Library = Perplexity
+}
 
 return Perplexity
